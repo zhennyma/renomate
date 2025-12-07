@@ -58,20 +58,71 @@
 - RLS policies in separate migration files with `_rls` suffix
 - Use `auth.uid()` for user context in RLS
 
-### 3.3 File Organization
+### 3.3 Schema Change Workflow (IMPORTANT)
+
+**To prevent docs/code/types drift, follow this workflow for ANY schema change:**
+
 ```
-bgc/
-├── design/src/
-│   ├── components/     # UI components
-│   ├── pages/          # Route pages
-│   ├── lib/            # Utilities, types, repositories
-│   ├── contexts/       # React contexts
-│   └── hooks/          # Custom hooks
+┌─────────────────────────────────────────────────────────────┐
+│  SCHEMA CHANGE WORKFLOW (All 4 steps required!)            │
+│                                                             │
+│  1. MIGRATION  →  2. PUSH  →  3. TYPES  →  4. DOCS         │
+│                                                             │
+│  Write SQL        Apply to     Regenerate    Update        │
+│  migration        database     TypeScript    track-b-erd   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Step-by-step:**
+
+```bash
+# 1. Create migration file
+# supabase/migrations/YYYYMMDDHHMMSS_description.sql
+
+# 2. Push to database
+npm run db:push
+
+# 3. Regenerate types (from app/ folder)
+npm run db:types
+
+# 4. Update docs/track-b-erd.md with the change
+```
+
+**Available npm scripts (run from app/ folder):**
+
+| Script | Description |
+|--------|-------------|
+| `npm run db:push` | Push migrations to Supabase |
+| `npm run db:types` | Generate TypeScript types from live database |
+| `npm run db:status` | Show which migrations are applied |
+| `npm run db:diff` | Show schema differences vs remote |
+
+**Golden Rule:** The **database** is the source of truth for schema. Everything else is derived:
+- `types.generated.ts` ← generated from database
+- `track-b-erd.md` ← documents what's in database
+- `lib/types.ts` ← imports from or extends generated types
+
+### 3.4 File Organization
+```
+renomate/
+├── app/src/
+│   ├── components/           # UI components
+│   ├── pages/                # Route pages
+│   ├── lib/
+│   │   ├── types.ts          # App-specific types (extends generated)
+│   │   └── repositories/     # Data access (mock → real Supabase)
+│   ├── integrations/supabase/
+│   │   ├── types.ts          # Hand-maintained types (legacy)
+│   │   └── types.generated.ts # AUTO-GENERATED - do not edit!
+│   ├── contexts/             # React contexts
+│   └── hooks/                # Custom hooks
 ├── supabase/
-│   ├── migrations/     # SQL migrations
-│   └── config.toml     # Supabase config
-└── docs/               # Planning and documentation
+│   ├── migrations/           # SQL migrations (source of truth)
+│   └── config.toml           # Supabase config
+└── docs/                     # Planning and documentation
 ```
+
+**⚠️ Never manually edit `types.generated.ts`** — it gets overwritten by `npm run db:types`
 
 ---
 
@@ -139,3 +190,6 @@ When a rule needs to change:
 | Date | Change | Reason |
 |------|--------|--------|
 | 2025-12-07 | Initial rules created | First planning session |
+| 2025-12-07 | Added Schema Change Workflow (Section 3.3) | Prevent docs/code/types drift |
+| 2025-12-07 | Added npm scripts for db operations | Standardize database workflows |
+| 2025-12-07 | Updated file organization (Section 3.4) | Clarify generated vs manual types |

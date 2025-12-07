@@ -2,7 +2,8 @@
  * Mock Data for Development
  * 
  * TODO: Replace with real Supabase queries once connected.
- * This data structure aligns with the expected ERD.
+ * This data structure aligns with the ERD (track-b-erd.md).
+ * Last synced: 2025-12-07
  */
 
 import type {
@@ -12,6 +13,7 @@ import type {
   ProjectPack,
   ProjectSupplierInvite,
   BlindSpot,
+  getFitScoreLevel,
 } from '../types';
 
 // Mock Consumer ID (simulating logged-in consumer)
@@ -20,205 +22,378 @@ export const MOCK_CONSUMER_ID = 'consumer-001';
 // Mock Supplier ID (simulating logged-in supplier)
 export const MOCK_SUPPLIER_ID = 'supplier-001';
 
-// Mock Projects
+// Mock Projects (aligned with DB schema)
 export const mockProjects: Project[] = [
   {
     id: 'proj-001',
     consumer_id: MOCK_CONSUMER_ID,
-    name: 'Marina Apartment Renovation',
-    description: 'Complete renovation of a 2-bedroom apartment in Dubai Marina with modern finishes',
-    status: 'in_progress',
+    title: 'Marina Apartment Renovation',
+    status: 'execution',
     property_type: 'apartment',
-    location: 'Dubai Marina',
-    budget_band: 'premium',
-    estimated_budget: 280000,
-    start_date: '2024-02-01',
-    target_end_date: '2024-05-15',
+    location_city: 'Dubai',
+    location_area: 'Dubai Marina',
+    estimated_budget_min: 250000,
+    estimated_budget_max: 300000,
+    start_date_desired: '2024-02-01',
     created_at: '2024-01-15T10:00:00Z',
     updated_at: '2024-02-20T14:30:00Z',
   },
   {
     id: 'proj-002',
     consumer_id: MOCK_CONSUMER_ID,
-    name: 'Palm Villa Kitchen Upgrade',
-    description: 'Kitchen modernization with new appliances and custom cabinetry',
-    status: 'planning',
+    title: 'Palm Villa Kitchen Upgrade',
+    status: 'ready_for_review',
     property_type: 'villa',
-    location: 'Palm Jumeirah',
-    budget_band: 'luxury',
-    estimated_budget: 450000,
-    start_date: '2024-04-01',
-    target_end_date: '2024-07-30',
+    location_city: 'Dubai',
+    location_area: 'Palm Jumeirah',
+    estimated_budget_min: 400000,
+    estimated_budget_max: 500000,
+    start_date_desired: '2024-04-01',
     created_at: '2024-02-10T09:00:00Z',
     updated_at: '2024-02-18T11:00:00Z',
   },
   {
     id: 'proj-003',
     consumer_id: MOCK_CONSUMER_ID,
-    name: 'JBR Studio Refresh',
-    description: 'Quick cosmetic refresh for rental property',
+    title: 'JBR Studio Refresh',
     status: 'completed',
     property_type: 'apartment',
-    location: 'JBR',
-    budget_band: 'economy',
-    estimated_budget: 45000,
-    start_date: '2024-01-10',
-    target_end_date: '2024-01-25',
+    location_city: 'Dubai',
+    location_area: 'JBR',
+    estimated_budget_min: 40000,
+    estimated_budget_max: 50000,
+    start_date_desired: '2024-01-10',
     created_at: '2024-01-05T08:00:00Z',
     updated_at: '2024-01-26T16:00:00Z',
   },
 ];
 
-// Mock Rooms
+// Mock Rooms (aligned with DB schema including state machine columns)
 export const mockRooms: Room[] = [
   // Project 1 rooms
-  { id: 'room-001', project_id: 'proj-001', name: 'Master Bathroom', room_type: 'bathroom', renovation_depth: 'full', area_sqm: 12 },
-  { id: 'room-002', project_id: 'proj-001', name: 'Guest Bathroom', room_type: 'bathroom', renovation_depth: 'partial', area_sqm: 8 },
-  { id: 'room-003', project_id: 'proj-001', name: 'Open Kitchen', room_type: 'kitchen', renovation_depth: 'full', area_sqm: 18 },
-  { id: 'room-004', project_id: 'proj-001', name: 'Living Area', room_type: 'living_room', renovation_depth: 'cosmetic', area_sqm: 35 },
-  { id: 'room-005', project_id: 'proj-001', name: 'Master Bedroom', room_type: 'bedroom', renovation_depth: 'cosmetic', area_sqm: 22 },
+  { 
+    id: 'room-001', 
+    project_id: 'proj-001', 
+    name: 'Master Bathroom', 
+    room_type: 'bathroom', 
+    renovation_depth: 'full', 
+    area_sqm: 12,
+    lifecycle_state: 'execution',
+    execution_state: 'in_progress',
+  },
+  { 
+    id: 'room-002', 
+    project_id: 'proj-001', 
+    name: 'Guest Bathroom', 
+    room_type: 'bathroom', 
+    renovation_depth: 'medium', 
+    area_sqm: 8,
+    lifecycle_state: 'execution',
+    execution_state: 'not_started',
+  },
+  { 
+    id: 'room-003', 
+    project_id: 'proj-001', 
+    name: 'Open Kitchen', 
+    room_type: 'kitchen', 
+    renovation_depth: 'full', 
+    area_sqm: 18,
+    lifecycle_state: 'execution',
+    execution_state: 'in_progress',
+  },
+  { 
+    id: 'room-004', 
+    project_id: 'proj-001', 
+    name: 'Living Area', 
+    room_type: 'living_room', 
+    renovation_depth: 'light', 
+    area_sqm: 35,
+    lifecycle_state: 'sourcing',
+    execution_state: 'not_started',
+  },
+  { 
+    id: 'room-005', 
+    project_id: 'proj-001', 
+    name: 'Master Bedroom', 
+    room_type: 'bedroom', 
+    renovation_depth: 'light', 
+    area_sqm: 22,
+    lifecycle_state: 'sourcing',
+    execution_state: 'not_started',
+  },
   // Project 2 rooms
-  { id: 'room-006', project_id: 'proj-002', name: 'Main Kitchen', room_type: 'kitchen', renovation_depth: 'full', area_sqm: 45 },
-  { id: 'room-007', project_id: 'proj-002', name: 'Pantry', room_type: 'other', renovation_depth: 'full', area_sqm: 8 },
+  { 
+    id: 'room-006', 
+    project_id: 'proj-002', 
+    name: 'Main Kitchen', 
+    room_type: 'kitchen', 
+    renovation_depth: 'full', 
+    area_sqm: 45,
+    lifecycle_state: 'draft',
+    execution_state: 'not_started',
+  },
+  { 
+    id: 'room-007', 
+    project_id: 'proj-002', 
+    name: 'Pantry', 
+    room_type: 'pantry', 
+    renovation_depth: 'full', 
+    area_sqm: 8,
+    lifecycle_state: 'draft',
+    execution_state: 'not_started',
+  },
   // Project 3 rooms
-  { id: 'room-008', project_id: 'proj-003', name: 'Studio Space', room_type: 'living_room', renovation_depth: 'cosmetic', area_sqm: 40 },
-  { id: 'room-009', project_id: 'proj-003', name: 'Bathroom', room_type: 'bathroom', renovation_depth: 'cosmetic', area_sqm: 6 },
+  { 
+    id: 'room-008', 
+    project_id: 'proj-003', 
+    name: 'Studio Space', 
+    room_type: 'living_room', 
+    renovation_depth: 'light', 
+    area_sqm: 40,
+    lifecycle_state: 'completed',
+    execution_state: 'complete',
+  },
+  { 
+    id: 'room-009', 
+    project_id: 'proj-003', 
+    name: 'Bathroom', 
+    room_type: 'bathroom', 
+    renovation_depth: 'light', 
+    area_sqm: 6,
+    lifecycle_state: 'completed',
+    execution_state: 'complete',
+  },
 ];
 
-// Mock Tasks
+// Mock Tasks (aligned with DB schema)
 export const mockTasks: Task[] = [
   // Project 1 tasks
-  { id: 'task-001', project_id: 'proj-001', name: 'Initial design consultation', owner: 'designer', status: 'completed', due_date: '2024-02-05', order: 1 },
-  { id: 'task-002', project_id: 'proj-001', name: 'NOC application submission', owner: 'building', status: 'completed', due_date: '2024-02-10', order: 2 },
-  { id: 'task-003', project_id: 'proj-001', name: 'Demolition work', owner: 'contractor', status: 'completed', due_date: '2024-02-20', order: 3 },
-  { id: 'task-004', project_id: 'proj-001', name: 'Plumbing rough-in', owner: 'contractor', status: 'in_progress', due_date: '2024-03-01', order: 4 },
-  { id: 'task-005', project_id: 'proj-001', name: 'Electrical rewiring', owner: 'contractor', status: 'in_progress', due_date: '2024-03-05', order: 5 },
-  { id: 'task-006', project_id: 'proj-001', name: 'Tile selection approval', owner: 'consumer', status: 'pending', due_date: '2024-03-08', order: 6 },
-  { id: 'task-007', project_id: 'proj-001', name: 'Kitchen cabinet delivery', owner: 'supplier', status: 'pending', due_date: '2024-03-15', order: 7 },
-  { id: 'task-008', project_id: 'proj-001', name: 'Tiling installation', owner: 'contractor', status: 'pending', due_date: '2024-03-25', order: 8 },
+  { 
+    id: 'task-001', 
+    project_id: 'proj-001', 
+    title: 'Initial design consultation', 
+    status: 'done', 
+    priority: 'high',
+    due_date: '2024-02-05',
+    completed_at: '2024-02-04T15:00:00Z',
+    is_blocking: false,
+    source: 'manual',
+    created_at: '2024-01-20T10:00:00Z',
+    updated_at: '2024-02-04T15:00:00Z',
+  },
+  { 
+    id: 'task-002', 
+    project_id: 'proj-001', 
+    title: 'NOC application submission', 
+    status: 'done', 
+    priority: 'critical',
+    due_date: '2024-02-10',
+    completed_at: '2024-02-09T12:00:00Z',
+    is_blocking: true,
+    source: 'blind_spot_engine',
+    created_at: '2024-01-20T10:00:00Z',
+    updated_at: '2024-02-09T12:00:00Z',
+  },
+  { 
+    id: 'task-003', 
+    project_id: 'proj-001', 
+    title: 'Demolition work', 
+    status: 'done', 
+    priority: 'high',
+    due_date: '2024-02-20',
+    completed_at: '2024-02-19T18:00:00Z',
+    is_blocking: true,
+    source: 'pack_generator',
+    created_at: '2024-01-20T10:00:00Z',
+    updated_at: '2024-02-19T18:00:00Z',
+  },
+  { 
+    id: 'task-004', 
+    project_id: 'proj-001', 
+    room_id: 'room-001',
+    title: 'Plumbing rough-in', 
+    status: 'in_progress', 
+    priority: 'high',
+    due_date: '2024-03-01',
+    is_blocking: true,
+    source: 'pack_generator',
+    created_at: '2024-01-20T10:00:00Z',
+    updated_at: '2024-02-25T10:00:00Z',
+  },
+  { 
+    id: 'task-005', 
+    project_id: 'proj-001', 
+    title: 'Electrical rewiring', 
+    status: 'in_progress', 
+    priority: 'high',
+    due_date: '2024-03-05',
+    is_blocking: true,
+    source: 'pack_generator',
+    created_at: '2024-01-20T10:00:00Z',
+    updated_at: '2024-02-25T10:00:00Z',
+  },
+  { 
+    id: 'task-006', 
+    project_id: 'proj-001', 
+    title: 'Tile selection approval', 
+    status: 'todo', 
+    priority: 'medium',
+    due_date: '2024-03-08',
+    is_blocking: false,
+    source: 'manual',
+    created_at: '2024-01-20T10:00:00Z',
+    updated_at: '2024-01-20T10:00:00Z',
+  },
+  { 
+    id: 'task-007', 
+    project_id: 'proj-001', 
+    room_id: 'room-003',
+    title: 'Kitchen cabinet delivery', 
+    status: 'todo', 
+    priority: 'high',
+    due_date: '2024-03-15',
+    is_blocking: true,
+    source: 'blind_spot_engine',
+    created_at: '2024-01-20T10:00:00Z',
+    updated_at: '2024-01-20T10:00:00Z',
+  },
+  { 
+    id: 'task-008', 
+    project_id: 'proj-001', 
+    room_id: 'room-001',
+    title: 'Tiling installation', 
+    status: 'todo', 
+    priority: 'medium',
+    due_date: '2024-03-25',
+    is_blocking: false,
+    source: 'pack_generator',
+    created_at: '2024-01-20T10:00:00Z',
+    updated_at: '2024-01-20T10:00:00Z',
+  },
   // Project 2 tasks
-  { id: 'task-009', project_id: 'proj-002', name: 'Kitchen design finalization', owner: 'designer', status: 'in_progress', due_date: '2024-03-15', order: 1 },
-  { id: 'task-010', project_id: 'proj-002', name: 'Appliance selection', owner: 'consumer', status: 'pending', due_date: '2024-03-20', order: 2 },
+  { 
+    id: 'task-009', 
+    project_id: 'proj-002', 
+    room_id: 'room-006',
+    title: 'Kitchen design finalization', 
+    status: 'in_progress', 
+    priority: 'high',
+    due_date: '2024-03-15',
+    is_blocking: true,
+    source: 'manual',
+    created_at: '2024-02-15T10:00:00Z',
+    updated_at: '2024-02-20T10:00:00Z',
+  },
+  { 
+    id: 'task-010', 
+    project_id: 'proj-002', 
+    title: 'Appliance selection', 
+    status: 'todo', 
+    priority: 'medium',
+    due_date: '2024-03-20',
+    is_blocking: false,
+    source: 'manual',
+    created_at: '2024-02-15T10:00:00Z',
+    updated_at: '2024-02-15T10:00:00Z',
+  },
 ];
 
-// Mock Project Packs
+// Mock Project Packs (aligned with DB schema - flat structure)
 export const mockProjectPacks: ProjectPack[] = [
   {
     id: 'pack-001',
     project_id: 'proj-001',
-    budget_summary: {
-      total: 280000,
-      band: 'premium',
-      breakdown: {
-        design: 25000,
-        materials: 120000,
-        labor: 95000,
-        permits: 15000,
-        contingency: 25000,
-      },
-    },
-    timeline_summary: {
-      start_date: '2024-02-01',
-      target_end_date: '2024-05-15',
-      estimated_duration_weeks: 15,
-    },
-    rooms_count: 5,
-    blind_spots: [
-      {
-        id: 'bs-001',
-        category: 'permit',
-        title: 'NOC Required',
-        description: 'Building requires NOC approval before any structural work can begin',
-        severity: 'high',
-      },
-      {
-        id: 'bs-002',
-        category: 'material',
-        title: 'Long-Lead Items',
-        description: 'Custom kitchen cabinets have 6-8 week lead time',
-        severity: 'medium',
-      },
-      {
-        id: 'bs-003',
-        category: 'structural',
-        title: 'AC Duct Relocation',
-        description: 'Kitchen extension may require AC duct modifications',
-        severity: 'medium',
-      },
-    ],
+    version: 1,
+    status: 'published',
     generated_at: '2024-01-20T12:00:00Z',
+    generated_by: 'system',
   },
   {
     id: 'pack-002',
     project_id: 'proj-002',
-    budget_summary: {
-      total: 450000,
-      band: 'luxury',
-      breakdown: {
-        design: 45000,
-        materials: 220000,
-        labor: 130000,
-        permits: 20000,
-        contingency: 35000,
-      },
-    },
-    timeline_summary: {
-      start_date: '2024-04-01',
-      target_end_date: '2024-07-30',
-      estimated_duration_weeks: 17,
-    },
-    rooms_count: 2,
-    blind_spots: [
-      {
-        id: 'bs-004',
-        category: 'structural',
-        title: 'Load-Bearing Wall',
-        description: 'Proposed island location may conflict with load-bearing structure',
-        severity: 'high',
-      },
-      {
-        id: 'bs-005',
-        category: 'timeline',
-        title: 'Summer Scheduling',
-        description: 'Contractor availability may be limited during Ramadan period',
-        severity: 'low',
-      },
-    ],
+    version: 1,
+    status: 'draft',
     generated_at: '2024-02-15T10:00:00Z',
+    generated_by: 'system',
   },
 ];
 
-// Mock Supplier Invites (Leads)
+// Mock Blind Spots (UI helper data - not stored in DB directly)
+export const mockBlindSpots: Record<string, BlindSpot[]> = {
+  'proj-001': [
+    {
+      id: 'bs-001',
+      category: 'permit',
+      title: 'NOC Required',
+      description: 'Building requires NOC approval before any structural work can begin',
+      severity: 'high',
+    },
+    {
+      id: 'bs-002',
+      category: 'material',
+      title: 'Long-Lead Items',
+      description: 'Custom kitchen cabinets have 6-8 week lead time',
+      severity: 'medium',
+    },
+    {
+      id: 'bs-003',
+      category: 'structural',
+      title: 'AC Duct Relocation',
+      description: 'Kitchen extension may require AC duct modifications',
+      severity: 'medium',
+    },
+  ],
+  'proj-002': [
+    {
+      id: 'bs-004',
+      category: 'structural',
+      title: 'Load-Bearing Wall',
+      description: 'Proposed island location may conflict with load-bearing structure',
+      severity: 'high',
+    },
+    {
+      id: 'bs-005',
+      category: 'timeline',
+      title: 'Summer Scheduling',
+      description: 'Contractor availability may be limited during Ramadan period',
+      severity: 'low',
+    },
+  ],
+};
+
+// Mock Supplier Invites (Leads) - aligned with DB schema
 export const mockSupplierInvites: ProjectSupplierInvite[] = [
   {
     id: 'invite-001',
     project_id: 'proj-001',
     supplier_id: MOCK_SUPPLIER_ID,
-    status: 'new',
-    fit_score: 'high',
-    fit_score_value: 92,
-    invited_at: '2024-02-18T09:00:00Z',
+    invite_channel: 'dashboard',
+    decision_status: 'pending',
+    fit_score: 92,
+    created_at: '2024-02-18T09:00:00Z',
+    updated_at: '2024-02-18T09:00:00Z',
     project: mockProjects[0],
   },
   {
     id: 'invite-002',
     project_id: 'proj-002',
     supplier_id: MOCK_SUPPLIER_ID,
-    status: 'viewed',
-    fit_score: 'medium',
-    fit_score_value: 74,
-    invited_at: '2024-02-20T11:00:00Z',
+    invite_channel: 'whatsapp',
+    decision_status: 'pending',
+    fit_score: 74,
+    created_at: '2024-02-20T11:00:00Z',
+    updated_at: '2024-02-20T11:00:00Z',
     project: mockProjects[1],
   },
   {
     id: 'invite-003',
     project_id: 'proj-003',
     supplier_id: MOCK_SUPPLIER_ID,
-    status: 'responded',
-    fit_score: 'high',
-    fit_score_value: 88,
-    invited_at: '2024-01-08T14:00:00Z',
-    responded_at: '2024-01-09T10:00:00Z',
+    invite_channel: 'email',
+    decision_status: 'accepted',
+    fit_score: 88,
+    created_at: '2024-01-08T14:00:00Z',
+    updated_at: '2024-01-09T10:00:00Z',
     project: mockProjects[2],
   },
 ];
@@ -231,7 +406,46 @@ export const getBlindSpotIcon = (category: BlindSpot['category']): string => {
     timeline: '⏰',
     budget: '💰',
     material: '📦',
+    compliance: '✅',
+    utilities: '🔌',
     other: '⚠️',
   };
   return icons[category];
+};
+
+// Helper to get project blind spots
+export const getProjectBlindSpots = (projectId: string): BlindSpot[] => {
+  return mockBlindSpots[projectId] || [];
+};
+
+// Helper to get rooms for a project
+export const getProjectRooms = (projectId: string): Room[] => {
+  return mockRooms.filter(room => room.project_id === projectId);
+};
+
+// Helper to get tasks for a project
+export const getProjectTasks = (projectId: string): Task[] => {
+  return mockTasks.filter(task => task.project_id === projectId);
+};
+
+// Helper to calculate budget display
+export const formatBudgetRange = (project: Project): string => {
+  if (project.estimated_budget_min && project.estimated_budget_max) {
+    return `AED ${(project.estimated_budget_min / 1000).toFixed(0)}k - ${(project.estimated_budget_max / 1000).toFixed(0)}k`;
+  }
+  if (project.estimated_budget_min) {
+    return `From AED ${(project.estimated_budget_min / 1000).toFixed(0)}k`;
+  }
+  if (project.estimated_budget_max) {
+    return `Up to AED ${(project.estimated_budget_max / 1000).toFixed(0)}k`;
+  }
+  return 'Budget TBD';
+};
+
+// Helper to get location display
+export const formatLocation = (project: Project): string => {
+  if (project.location_area && project.location_city) {
+    return `${project.location_area}, ${project.location_city}`;
+  }
+  return project.location_area || project.location_city || 'Location TBD';
 };

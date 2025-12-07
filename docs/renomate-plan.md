@@ -106,11 +106,13 @@
 - ✅ Lovable-generated React/TypeScript app shell
 - ✅ Consumer views: ProjectsList, ProjectDetail
 - ✅ Supplier views: LeadsList, LeadDetail
-- ✅ Mock repositories with sample data
+- ✅ Mock repositories with sample data (aligned with ERD)
 - ✅ UI components from shadcn/ui
-- ✅ Types defined in `lib/types.ts`
+- ✅ Types defined in `lib/types.ts` (synced with ERD 2025-12-07)
+- ✅ Supabase types in `integrations/supabase/types.ts` (synced with ERD 2025-12-07)
 - ✅ `supabase/` folder with config and migrations
-- ✅ ERD schema applied to database (~25 tables)
+- ✅ ERD schema applied to database (25+ tables)
+- ✅ Alignment migration for enum values (projects.status, tasks.priority, tasks.source)
 - ✅ Environment variables configured (app/.env)
 - ✅ Local dev server runs on localhost:8081
 - ✅ App folder committed to git (fixed gitlink issue)
@@ -154,11 +156,14 @@
 | B4 | Migration: Inspiration module | 45m | Done |
 | B5 | Migration: Supplier Matching, Invites, Quotes | 60m | Done |
 | B6 | Migration: Sampling & Showroom Visits | 45m | Done |
-| B7 | Migration: Tasks & Dependencies | 45m | Done |
+| B7 | Migration: Tasks, Dependencies, Change Orders, Payments | 45m | Done |
+| B7b | Migration: WhatsApp tables (threads, messages) | 30m | Done |
+| B7c | Migration: Audit logs | 15m | Done |
 | B8 | Add State Machine columns to rooms | 30m | Done |
 | B9 | Push migrations and verify schema | 30m | Done |
+| B10 | Alignment migration: fix status/priority/source enums | 15m | Done |
 
-**Completed:** All core tables pushed to Supabase. One alignment migration needed for State Machine columns on `rooms` table.
+**Completed:** All 25+ tables pushed to Supabase. Alignment migration applied to fix enum values to match ERD docs.
 
 ### Track C: RLS Baseline
 **Notion Inputs:** RLS Matrix, Implement MVP RLS baseline PRD
@@ -180,7 +185,7 @@
 | ID | Task | Est. | Status |
 |----|------|------|--------|
 | D1 | Connect app to real Supabase (replace mocks) | 60m | Not Started |
-| D2 | Update types.ts to match ERD exactly | 45m | Not Started |
+| D2 | Update types.ts to match ERD exactly | 45m | Done |
 | D3 | Implement auth context with Supabase Auth | 60m | Not Started |
 | D4 | Consumer: Enhance Projects List with real data | 45m | Not Started |
 | D5 | Consumer: Enhance Project Detail with rooms/tasks | 60m | Not Started |
@@ -188,6 +193,8 @@
 | D7 | Supplier: Enhance Leads List with fit scores | 45m | Not Started |
 | D8 | Supplier: Enhance Lead Detail with pack snapshot | 60m | Not Started |
 | D9 | Apply Design System tokens | 60m | Not Started |
+
+**Partial Progress:** D2 completed - `app/src/lib/types.ts` and `app/src/integrations/supabase/types.ts` now aligned with ERD.
 
 ### Track E: Engines
 **Notion Inputs:** Pack Generator, Blind Spot, Fit Scoring, State Machine Logic docs
@@ -214,12 +221,14 @@
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| F1 | Migration: whatsapp_threads, whatsapp_messages | 45m | Not Started |
+| F1 | Migration: whatsapp_threads, whatsapp_messages | 45m | Done (in B7b) |
 | F2 | RLS for WhatsApp tables | 30m | Not Started |
 | F3 | Webhook endpoint skeleton | 60m | Not Started |
 | F4 | Phone normalization & thread resolution | 60m | Not Started |
 | F5 | "YES" reply → sourcing transition | 60m | Not Started |
 | F6 | Magic link generation for suppliers | 45m | Not Started |
+
+**Note:** F1 tables already created in initial migration (Track B7b). RLS and implementation pending.
 
 ### Track G: Logging & Hardening
 **Notion Inputs:** Add basic logging and harden RLS PRD
@@ -263,6 +272,9 @@ Based on dependencies:
 |------|--------|--------|
 | 2025-12-07 | Initial plan created | First planning session |
 | 2025-12-07 | Track A fully complete | Fixed app/ gitlink, deployed to Vercel with env vars |
+| 2025-12-07 | Track B alignment migration added | Fixed discrepancies between ERD docs and initial migration (status/priority/source enums) |
+| 2025-12-07 | App types synced with ERD | Updated `lib/types.ts` and `integrations/supabase/types.ts` to match DB schema |
+| 2025-12-07 | Track B docs updated | Added documentation for change_orders, payments, whatsapp, and audit_logs tables |
 
 ---
 

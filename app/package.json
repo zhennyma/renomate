@@ -8,7 +8,11 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:types": "npx supabase gen types typescript --project-id $(grep 'project_id' ../supabase/config.toml | cut -d'\"' -f2) > src/integrations/supabase/types.generated.ts && echo '✅ Types generated from database'",
+    "db:push": "cd ../supabase && npx supabase db push",
+    "db:status": "cd ../supabase && npx supabase migration list",
+    "db:diff": "cd ../supabase && npx supabase db diff --linked"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

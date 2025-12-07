@@ -21,9 +21,12 @@ This track creates all database tables defined in the ERD Notion page. Tables ar
 | B4 | Migration: inspiration_assets, boards, items, favourites | Section 3 | 45m | Done |
 | B5 | Migration: project_supplier_invites, quotes, quote_line_items, supplier_scopes | Section 4 | 60m | Done |
 | B6 | Migration: samples, sample_feedback, showroom_visits | Section 5 | 45m | Done |
-| B7 | Migration: tasks, task_dependencies | Section 6 | 45m | Done |
+| B7 | Migration: tasks, task_dependencies, change_orders, payments | Section 6 | 45m | Done |
+| B7b | Migration: whatsapp_threads, whatsapp_messages | Section 7 | 30m | Done |
+| B7c | Migration: audit_logs | Section 8 | 15m | Done |
 | B8 | Add State Machine columns to rooms | State Machine Logic | 30m | Done |
 | B9 | Push migrations and verify schema | - | 30m | Done |
+| B10 | Alignment migration: fix status/priority/source values | - | 15m | Done |
 
 ---
 
@@ -377,8 +380,113 @@ CREATE TABLE public.task_dependencies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   task_id UUID NOT NULL REFERENCES public.tasks (id) ON DELETE CASCADE,
   depends_on_task_id UUID NOT NULL REFERENCES public.tasks (id) ON DELETE CASCADE,
+  dependency_type TEXT DEFAULT 'finish_to_start'
+    CHECK (dependency_type IN ('finish_to_start', 'start_to_start', 'finish_to_finish')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(task_id, depends_on_task_id)
 );
+
+CREATE INDEX task_dependencies_task_id_idx ON public.task_dependencies (task_id);
+
+-- change_orders: Scope changes during execution
+CREATE TABLE public.change_orders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES public.projects (id) ON DELETE CASCADE,
+  requested_by_user_id UUID REFERENCES public.users (id) ON DELETE SET NULL,
+  supplier_id UUID REFERENCES public.supplier_profiles (id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'approved', 'rejected', 'completed')),
+  price_impact NUMERIC,
+  timeline_impact_days INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resolved_at TIMESTAMPTZ
+);
+
+CREATE INDEX change_orders_project_id_idx ON public.change_orders (project_id);
+
+-- payments: Payment tracking (out of MVP scope but schema ready)
+CREATE TABLE public.payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES public.projects (id) ON DELETE CASCADE,
+  supplier_id UUID REFERENCES public.supplier_profiles (id) ON DELETE SET NULL,
+  amount NUMERIC NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'AED',
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'refunded')),
+  payment_type TEXT CHECK (payment_type IN ('deposit', 'milestone', 'final', 'refund')),
+  external_reference TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at TIMESTAMPTZ
+);
+
+CREATE INDEX payments_project_id_idx ON public.payments (project_id);
+```
+
+---
+
+## B7b: WhatsApp Messaging Tables
+
+**Note:** These tables support Track F (WhatsApp Integration).
+
+```sql
+-- whatsapp_threads: Conversation threads
+CREATE TABLE public.whatsapp_threads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID REFERENCES public.projects (id) ON DELETE SET NULL,
+  consumer_id UUID REFERENCES public.users (id) ON DELETE SET NULL,
+  supplier_id UUID REFERENCES public.supplier_profiles (id) ON DELETE SET NULL,
+  wa_thread_id TEXT UNIQUE,
+  status TEXT NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'archived', 'closed')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX whatsapp_threads_project_id_idx ON public.whatsapp_threads (project_id);
+
+-- whatsapp_messages: Individual messages
+CREATE TABLE public.whatsapp_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  thread_id UUID NOT NULL REFERENCES public.whatsapp_threads (id) ON DELETE CASCADE,
+  wa_message_id TEXT UNIQUE,
+  direction TEXT NOT NULL CHECK (direction IN ('inbound', 'outbound')),
+  sender_type TEXT CHECK (sender_type IN ('consumer', 'supplier', 'platform', 'bot')),
+  sender_user_id UUID REFERENCES public.users (id) ON DELETE SET NULL,
+  content TEXT,
+  media_url TEXT,
+  message_type TEXT CHECK (message_type IN ('text', 'image', 'document', 'template', 'interactive')),
+  status TEXT DEFAULT 'sent'
+    CHECK (status IN ('sent', 'delivered', 'read', 'failed')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX whatsapp_messages_thread_id_idx ON public.whatsapp_messages (thread_id);
+```
+
+---
+
+## B7c: Audit & Logging
+
+```sql
+-- audit_logs: System-wide audit trail
+CREATE TABLE public.audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.users (id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id UUID,
+  old_values JSONB,
+  new_values JSONB,
+  ip_address INET,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX audit_logs_user_id_idx ON public.audit_logs (user_id);
+CREATE INDEX audit_logs_entity_idx ON public.audit_logs (entity_type, entity_id);
+CREATE INDEX audit_logs_created_at_idx ON public.audit_logs (created_at);
 ```
 
 ---
@@ -415,11 +523,12 @@ ADD COLUMN previous_lifecycle_state TEXT
 After all migrations are pushed:
 
 - [x] Run `supabase db push`
-- [x] Verify all 20+ tables exist in Supabase dashboard
+- [x] Verify all 25+ tables exist in Supabase dashboard
 - [x] Check all foreign key constraints
 - [x] Check all CHECK constraints
 - [ ] Insert test data for basic validation (optional)
 - [x] Verify indexes are created
+- [x] Alignment migration applied (B10)
 
 ---
 
@@ -437,8 +546,13 @@ After all migrations are pushed:
 
 | Decision | Rationale |
 |----------|-----------|
-| `projects.status` aligned to State Machine | ERD had simpler status; State Machine is more complete |
+| `projects.status` includes `ready_for_review`, `open_for_bids` | Per ERD spec for bid flow stages |
 | `rooms.lifecycle_state` added | Per State Machine spec for room-level state |
 | `rooms.execution_state` added | Per State Machine spec for contractor work tracking |
-| `tasks.source` field added | Track auto-generated vs manual tasks |
-| WhatsApp tables NOT here | Moved to Track F (separate migration) |
+| `tasks.source` = `manual`, `blind_spot_engine`, `pack_generator` | Track auto-generated vs manual tasks per ERD |
+| `tasks.priority` includes `critical` (not `urgent`) | Per ERD spec |
+| `tasks.completed_at` added | Track task completion time |
+| `task_dependencies` has `dependency_type` | Supports different dependency relationships |
+| WhatsApp tables included in initial migration | Tables ready, implementation in Track F |
+| `change_orders`, `payments` tables included | Schema ready for future phases |
+| `audit_logs` table included | Supports Track G (Logging) |
