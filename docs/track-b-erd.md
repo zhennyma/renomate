@@ -414,12 +414,12 @@ ADD COLUMN previous_lifecycle_state TEXT
 
 After all migrations are pushed:
 
-- [ ] Run `supabase db push`
-- [ ] Verify all 20+ tables exist in Supabase dashboard
-- [ ] Check all foreign key constraints
-- [ ] Check all CHECK constraints
-- [ ] Insert test data for basic validation
-- [ ] Verify indexes are created
+- [x] Run `supabase db push`
+- [x] Verify all 20+ tables exist in Supabase dashboard
+- [x] Check all foreign key constraints
+- [x] Check all CHECK constraints
+- [ ] Insert test data for basic validation (optional)
+- [x] Verify indexes are created
 
 ---
 
