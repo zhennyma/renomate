@@ -1,7 +1,7 @@
 # Renomate MVP Build Plan
 
 > **Last Updated:** 2025-12-07  
-> **Status:** In Progress (Track A Complete + Vercel Deployed, Track B pending B8)  
+> **Status:** In Progress (Track A & B Complete, Ready for Track C)  
 > **Notion is the SINGLE source of truth.** If code or intuition disagree with Notion, treat Notion as canonical.
 
 ---
@@ -120,7 +120,6 @@
 - ❌ Real Supabase connection in UI (app still uses mocks)
 - ❌ RLS policies
 - ❌ Backend services for engines
-- ❌ State machine columns on rooms (alignment migration)
 - ❌ WhatsApp webhook
 - ❌ Auth flow (login/signup)
 
@@ -156,7 +155,7 @@
 | B5 | Migration: Supplier Matching, Invites, Quotes | 60m | Done |
 | B6 | Migration: Sampling & Showroom Visits | 45m | Done |
 | B7 | Migration: Tasks & Dependencies | 45m | Done |
-| B8 | Add State Machine columns to rooms | 30m | **Needed** (alignment) |
+| B8 | Add State Machine columns to rooms | 30m | Done |
 | B9 | Push migrations and verify schema | 30m | Done |
 
 **Completed:** All core tables pushed to Supabase. One alignment migration needed for State Machine columns on `rooms` table.

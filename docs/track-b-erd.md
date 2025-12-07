@@ -1,7 +1,7 @@
 # Track B: Data Model & ERD
 
 > **Notion Source:** Data Model & ERD (Supabase Specs) - `9f5c77073a5f4a6fb8dc60e79b50ea67`  
-> **Status:** Complete (alignment migration pending for State Machine)
+> **Status:** Complete
 
 ---
 
@@ -22,7 +22,7 @@ This track creates all database tables defined in the ERD Notion page. Tables ar
 | B5 | Migration: project_supplier_invites, quotes, quote_line_items, supplier_scopes | Section 4 | 60m | Done |
 | B6 | Migration: samples, sample_feedback, showroom_visits | Section 5 | 45m | Done |
 | B7 | Migration: tasks, task_dependencies | Section 6 | 45m | Done |
-| B8 | Add State Machine columns to rooms | State Machine Logic | 30m | **Pending** |
+| B8 | Add State Machine columns to rooms | State Machine Logic | 30m | Done |
 | B9 | Push migrations and verify schema | - | 30m | Done |
 
 ---
