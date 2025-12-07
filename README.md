@@ -1,119 +1,177 @@
-# Renomate
+# Supabase CLI
 
-Monorepo for the Renomate platform - a home renovation marketplace connecting consumers with suppliers.
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-## Structure
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
-```
-renomate/
-├── app/           # Lovable-generated web application (Vite + React + TypeScript)
-├── design/        # Design system, tokens, and shared UI components
-├── supabase/      # Database migrations and Supabase configuration
-└── package.json   # Workspace configuration
-```
+This repository contains all the functionality for Supabase CLI.
 
-### Packages
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
 
-- **`/app`** - Consumer and supplier-facing web application
-  - Built with Vite, React, TypeScript, and Tailwind CSS
-  - Uses shadcn/ui components
-  - Connects to Supabase for backend
+## Getting started
 
-- **`/design`** - Shared design system (renomate-design)
-  - Design tokens (colors, typography, spacing)
-  - Shared UI components
-  - Can be imported by the app package
+### Install the CLI
 
-- **`/supabase`** - Database infrastructure
-  - Supabase CLI configuration
-  - SQL migrations for schema changes
-  - RLS policies and database functions
-
-## Setup
-
-### Prerequisites
-
-- Node.js 18+
-- npm or pnpm
-- [Supabase CLI](https://supabase.com/docs/guides/cli)
-
-### 1. Install dependencies
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-# Install app dependencies
-cd app && npm install
-
-# Install design package dependencies (if needed)
-cd ../design && npm install
+npm i supabase --save-dev
 ```
 
-### 2. Configure environment variables
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
 
-Create `app/.env` with your Supabase credentials:
-
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
 ```
 
-> **Note:** Never commit real keys to Git. Use `.env.example` as a template.
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
 
-### 3. Run database migrations
+<details>
+  <summary><b>macOS</b></summary>
+
+  Available via [Homebrew](https://brew.sh). To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Windows</b></summary>
+
+  Available via [Scoop](https://scoop.sh). To install:
+
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
 
 ```bash
-cd supabase
-
-# Link to your Supabase project (first time only)
-supabase link --project-ref pazovpmbmhvbinbirzok
-
-# Push migrations to dev database
-supabase db push
+supabase bootstrap
 ```
 
-### 4. Start the app
+Or using npx:
 
 ```bash
-cd app
-npm run dev
+npx supabase bootstrap
 ```
 
-The app will be available at `http://localhost:5173`
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
 
-## Development Workflow
+## Docs
 
-### Database Changes
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
 
-1. Create a new migration file in `supabase/migrations/`
-2. Write your SQL schema changes
-3. Run `supabase db push` to apply to dev
-4. Commit the migration file to Git
+## Breaking changes
 
-### Design System
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
 
-The design package exports shared components and tokens. To use in the app:
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
 
-```typescript
-// Future: import from design package
-import { Button } from '@renomate/design';
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
 ```
-
-## Project Documentation
-
-Detailed specs and PRDs are maintained in Notion:
-- Platform Technical Requirements
-- Data Model & ERD
-- UI/UX Design System
-- Project State Machine Logic
-- Blind Spot Engine Logic
-
-## Environment Strategy
-
-| Environment | Supabase Project | Usage |
-|-------------|------------------|-------|
-| Local/Dev   | renomate-dev     | Development and testing |
-| Staging     | renomate-staging | Pre-production validation |
-| Production  | renomate-prod    | Live application |
-
-## License
-
-Private - All rights reserved

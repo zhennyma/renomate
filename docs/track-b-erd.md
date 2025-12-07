@@ -1,7 +1,7 @@
 # Track B: Data Model & ERD
 
 > **Notion Source:** Data Model & ERD (Supabase Specs) - `9f5c77073a5f4a6fb8dc60e79b50ea67`  
-> **Status:** Not Started
+> **Status:** Complete (alignment migration pending for State Machine)
 
 ---
 
@@ -15,15 +15,15 @@ This track creates all database tables defined in the ERD Notion page. Tables ar
 
 | ID | Task | ERD Section | Est. | Status |
 |----|------|-------------|------|--------|
-| B1 | Migration: users, consumer_profiles, supplier_profiles | Section 1 | 45m | Not Started |
-| B2 | Migration: projects, rooms, line_items | Section 2 | 60m | Not Started |
-| B3 | Migration: project_packs | Section 2.4 | 30m | Not Started |
-| B4 | Migration: inspiration_assets, boards, items, favourites | Section 3 | 45m | Not Started |
-| B5 | Migration: project_supplier_invites, quotes, quote_line_items, supplier_scopes | Section 4 | 60m | Not Started |
-| B6 | Migration: samples, sample_feedback, showroom_visits | Section 5 | 45m | Not Started |
-| B7 | Migration: tasks, task_dependencies | Section 6 | 45m | Not Started |
-| B8 | Add State Machine columns to rooms | State Machine Logic | 30m | Not Started |
-| B9 | Push migrations and verify schema | - | 30m | Not Started |
+| B1 | Migration: users, consumer_profiles, supplier_profiles | Section 1 | 45m | Done |
+| B2 | Migration: projects, rooms, line_items | Section 2 | 60m | Done |
+| B3 | Migration: project_packs | Section 2.4 | 30m | Done |
+| B4 | Migration: inspiration_assets, boards, items, favourites | Section 3 | 45m | Done |
+| B5 | Migration: project_supplier_invites, quotes, quote_line_items, supplier_scopes | Section 4 | 60m | Done |
+| B6 | Migration: samples, sample_feedback, showroom_visits | Section 5 | 45m | Done |
+| B7 | Migration: tasks, task_dependencies | Section 6 | 45m | Done |
+| B8 | Add State Machine columns to rooms | State Machine Logic | 30m | **Pending** |
+| B9 | Push migrations and verify schema | - | 30m | Done |
 
 ---
 

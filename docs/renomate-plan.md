@@ -1,7 +1,7 @@
 # Renomate MVP Build Plan
 
 > **Last Updated:** 2025-12-07  
-> **Status:** Planning  
+> **Status:** In Progress (Track A Complete, Ready for Track B/C)  
 > **Notion is the SINGLE source of truth.** If code or intuition disagree with Notion, treat Notion as canonical.
 
 ---
@@ -99,58 +99,65 @@
 
 ## 3. Current Codebase State
 
-**Repo:** `/Users/zhen/.cursor/worktrees/renomate/bgc`
+**Repo:** `/Users/zhen/Documents/Projects/renomate/renomate`
 
 ### What Exists
-- ✅ Monorepo structure with `design/` folder
+- ✅ Monorepo structure with `app/`, `design/`, `supabase/` folders
 - ✅ Lovable-generated React/TypeScript app shell
 - ✅ Consumer views: ProjectsList, ProjectDetail
 - ✅ Supplier views: LeadsList, LeadDetail
 - ✅ Mock repositories with sample data
 - ✅ UI components from shadcn/ui
 - ✅ Types defined in `lib/types.ts`
+- ✅ `supabase/` folder with config and migrations
+- ✅ ERD schema applied to database (~25 tables)
+- ✅ Environment variables configured (app/.env)
+- ✅ Local dev server runs on localhost:8081
 
 ### What's Missing
-- ❌ `supabase/` folder with migrations
-- ❌ Real Supabase connection (app uses mocks)
-- ❌ ERD schema applied to database
+- ❌ Real Supabase connection in UI (app still uses mocks)
 - ❌ RLS policies
 - ❌ Backend services for engines
-- ❌ State machine APIs
-- ❌ WhatsApp tables and webhook
+- ❌ State machine columns on rooms (alignment migration)
+- ❌ WhatsApp webhook
+- ❌ Auth flow (login/signup)
 
 ### Supabase Project
 - **Project Ref:** `pazovpmbmhvbinbirzok`
-- **Status:** Ready and accessible
+- **Status:** Connected, ERD pushed, CLI linked
 
 ---
 
 ## 4. Implementation Tracks
 
-### Track A: Dev Environment & Infra
+### Track A: Dev Environment & Infra ✅
 **Notion Inputs:** Phase 0, Connect Supabase PRD, Proposed Workflow
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| A1 | Create `supabase/` folder structure | 30m | Not Started |
-| A2 | Configure Supabase CLI and link project | 45m | Not Started |
-| A3 | Set up environment variables (.env) | 30m | Not Started |
-| A4 | Verify Vercel deployment | 30m | Not Started |
+| A1 | Create `supabase/` folder structure | 30m | Done |
+| A2 | Configure Supabase CLI and link project | 45m | Done |
+| A3 | Set up environment variables (.env) | 30m | Done |
+| A4 | Verify local app runs | 30m | Done |
 
-### Track B: Data Model & ERD
+**Completed:** Supabase CLI v2.65.5 installed, project linked, migrations pushed, app running on localhost:8081.
+
+### Track B: Data Model & ERD ✅
 **Notion Inputs:** Data Model & ERD (Supabase Specs)
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| B1 | Migration: Core Identity (users, consumer_profiles, supplier_profiles) | 45m | Not Started |
-| B2 | Migration: Projects, Rooms, Line Items | 60m | Not Started |
-| B3 | Migration: Project Packs | 30m | Not Started |
-| B4 | Migration: Inspiration module | 45m | Not Started |
-| B5 | Migration: Supplier Matching, Invites, Quotes | 60m | Not Started |
-| B6 | Migration: Sampling & Showroom Visits | 45m | Not Started |
-| B7 | Migration: Tasks & Dependencies | 45m | Not Started |
-| B8 | Add State Machine columns to rooms | 30m | Not Started |
-| B9 | Push migrations and verify schema | 30m | Not Started |
+| B1 | Migration: Core Identity (users, consumer_profiles, supplier_profiles) | 45m | Done |
+| B2 | Migration: Projects, Rooms, Line Items | 60m | Done |
+| B3 | Migration: Project Packs | 30m | Done |
+| B4 | Migration: Inspiration module | 45m | Done |
+| B5 | Migration: Supplier Matching, Invites, Quotes | 60m | Done |
+| B6 | Migration: Sampling & Showroom Visits | 45m | Done |
+| B7 | Migration: Tasks & Dependencies | 45m | Done |
+| B8 | Add State Machine columns to rooms | 30m | **Needed** (alignment) |
+| B9 | Push migrations and verify schema | 30m | Done |
+
+**Completed:** All core tables pushed to Supabase. One alignment migration needed for State Machine columns on `rooms` table.
 
 ### Track C: RLS Baseline
 **Notion Inputs:** RLS Matrix, Implement MVP RLS baseline PRD
@@ -260,6 +267,10 @@ Based on dependencies:
 ## 8. Related Docs
 
 - [Cursor Working Rules](./cursor-working-rules.md)
-- [Track B: ERD](./track-b-erd.md)
+- [Track A: Infra](./track-a-infra.md) ✅
+- [Track B: ERD](./track-b-erd.md) ✅
 - [Track C: RLS](./track-c-rls.md)
+- [Track D: App Shell](./track-d-app-shell.md)
 - [Track E: Engines](./track-e-engines.md)
+- [Track F: WhatsApp](./track-f-whatsapp.md)
+- [Track G: Logging](./track-g-logging.md)
