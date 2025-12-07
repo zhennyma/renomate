@@ -1,0 +1,29 @@
+{
+  "name": "renomate",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Renomate platform monorepo",
+  "workspaces": [
+    "app",
+    "design"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=app",
+    "build": "npm run build --workspace=app",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:push": "cd supabase && supabase db push",
+    "db:reset": "cd supabase && supabase db reset",
+    "db:diff": "cd supabase && supabase db diff"
+  },
+  "keywords": [
+    "renovation",
+    "marketplace",
+    "supabase"
+  ],
+  "author": "Renomate",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
