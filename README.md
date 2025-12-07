@@ -56,9 +56,9 @@ renomate/
 
 3. **Configure environment**
    
-   Create `app/.env`:
+   Create `app/.env` (get values from Supabase dashboard or team):
    ```env
-   VITE_SUPABASE_URL=https://pazovpmbmhvbinbirzok.supabase.co
+   VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
    VITE_SUPABASE_ANON_KEY=<your-anon-key>
    VITE_SUPABASE_PUBLISHABLE_KEY=<your-anon-key>
    VITE_APP_ENV=development
@@ -67,8 +67,10 @@ renomate/
 4. **Link Supabase project**
    ```bash
    cd supabase
-   supabase link --project-ref pazovpmbmhvbinbirzok
+   supabase link --project-ref <your-project-ref>
    ```
+   
+   > Get your project ref from `supabase/config.toml` or the Supabase dashboard URL.
 
 5. **Run the app**
    ```bash

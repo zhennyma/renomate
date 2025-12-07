@@ -123,7 +123,7 @@
 - ❌ Auth flow (login/signup)
 
 ### Supabase Project
-- **Project Ref:** `pazovpmbmhvbinbirzok`
+- **Project Ref:** See `supabase/config.toml`
 - **Status:** Connected, ERD pushed, CLI linked
 
 ---

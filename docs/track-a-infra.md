@@ -35,7 +35,7 @@ The folder already exists with:
 
 ```
 supabase/
-├── config.toml                           # Project ref: pazovpmbmhvbinbirzok
+├── config.toml                           # Contains project_id (see file for value)
 └── migrations/
     └── 00000000000000_initial_schema.sql # ~470 lines, full ERD
 ```
@@ -62,8 +62,8 @@ cd supabase
 # Login (opens browser for OAuth)
 supabase login
 
-# Link to remote project
-supabase link --project-ref pazovpmbmhvbinbirzok
+# Link to remote project (get project-ref from supabase/config.toml)
+supabase link --project-ref <your-project-ref>
 
 # Verify link
 supabase migration list
@@ -95,8 +95,8 @@ Applied    | Applied    | 00000000000000_initial_schema.sql
 **Location:** `app/.env`
 
 ```env
-# Supabase Configuration
-VITE_SUPABASE_URL=https://pazovpmbmhvbinbirzok.supabase.co
+# Supabase Configuration (get values from Supabase dashboard or supabase/config.toml)
+VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
 VITE_SUPABASE_ANON_KEY=<your-anon-key>
 VITE_SUPABASE_PUBLISHABLE_KEY=<your-anon-key>
 
@@ -125,7 +125,7 @@ In Vercel project settings, add:
 
 | Name | Value | Environment |
 |------|-------|-------------|
-| `VITE_SUPABASE_URL` | `https://pazovpmbmhvbinbirzok.supabase.co` | All |
+| `VITE_SUPABASE_URL` | `https://<your-project-ref>.supabase.co` | All |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | `<anon-key>` | All |
 | `VITE_APP_ENV` | `production` | Production |
 | `VITE_APP_ENV` | `development` | Preview |
@@ -148,7 +148,7 @@ npm run dev
 ### "Project not linked"
 
 ```bash
-supabase link --project-ref pazovpmbmhvbinbirzok
+supabase link --project-ref <your-project-ref>
 ```
 
 ### "Invalid API key" in app
