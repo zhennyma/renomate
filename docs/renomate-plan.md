@@ -1,7 +1,7 @@
 # Renomate MVP Build Plan
 
 > **Last Updated:** 2025-12-07  
-> **Status:** In Progress (Track A Complete, Ready for Track B/C)  
+> **Status:** In Progress (Track A Complete + Vercel Deployed, Track B pending B8)  
 > **Notion is the SINGLE source of truth.** If code or intuition disagree with Notion, treat Notion as canonical.
 
 ---
@@ -113,6 +113,8 @@
 - ✅ ERD schema applied to database (~25 tables)
 - ✅ Environment variables configured (app/.env)
 - ✅ Local dev server runs on localhost:8081
+- ✅ App folder committed to git (fixed gitlink issue)
+- ✅ Vercel deployment configured with env vars
 
 ### What's Missing
 - ❌ Real Supabase connection in UI (app still uses mocks)
@@ -140,7 +142,7 @@
 | A3 | Set up environment variables (.env) | 30m | Done |
 | A4 | Verify local app runs | 30m | Done |
 
-**Completed:** Supabase CLI v2.65.5 installed, project linked, migrations pushed, app running on localhost:8081.
+**Completed:** Supabase CLI v2.65.5 installed, project linked, migrations pushed, app running on localhost:8081, Vercel deployed with env vars.
 
 ### Track B: Data Model & ERD ✅
 **Notion Inputs:** Data Model & ERD (Supabase Specs)
@@ -261,6 +263,7 @@ Based on dependencies:
 | Date | Change | Reason |
 |------|--------|--------|
 | 2025-12-07 | Initial plan created | First planning session |
+| 2025-12-07 | Track A fully complete | Fixed app/ gitlink, deployed to Vercel with env vars |
 
 ---
 
