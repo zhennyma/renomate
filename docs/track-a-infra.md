@@ -189,4 +189,4 @@ supabase migration repair --status applied 00000000000000
 - [x] Project linked
 - [x] Migrations pushed
 - [x] Local app runs and connects to Supabase
-- [ ] Vercel env vars set (optional - for production)
+- [x] Vercel env vars set (optional - for production)
