@@ -66,7 +66,7 @@ renomate/
 
 4. **Link Supabase project**
    ```bash
-   cd supabase
+   cd ../supabase
    supabase link --project-ref <your-project-ref>
    ```
    
@@ -74,7 +74,7 @@ renomate/
 
 5. **Run the app**
    ```bash
-   cd app
+   cd ../app
    npm run dev
    ```
 
