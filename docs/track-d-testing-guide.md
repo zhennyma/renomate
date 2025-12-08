@@ -9,8 +9,23 @@
 ## Pre-requisites
 
 - [ ] Dev server is running (`npm run dev` in `/app`)
-- [ ] Supabase project is accessible
-- [ ] `.env` file has valid `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+- [ ] Supabase project is accessible (check Supabase Dashboard)
+- [ ] `.env` file in `/app` has valid values for:
+  - `VITE_SUPABASE_URL` - Your Supabase project URL
+  - `VITE_SUPABASE_ANON_KEY` - Your Supabase anon/public key
+
+### Verify Supabase Connection
+
+Open http://localhost:8080/ in your browser, then open the browser console (F12 or Cmd+Option+I) and run:
+
+```javascript
+// Test Supabase connection
+const { supabase } = await import('/src/integrations/supabase/client.ts');
+const { data, error } = await supabase.auth.getSession();
+console.log('Connection test:', error ? 'FAILED' : 'OK', error || data);
+```
+
+- [x] Connection test returns "OK" (no error)
 
 ---
 
