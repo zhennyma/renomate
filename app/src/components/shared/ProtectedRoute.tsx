@@ -25,8 +25,11 @@ export function ProtectedRoute({
   const { isAuthenticated, user, loading } = useAuth();
   const location = useLocation();
 
+  console.log('[ProtectedRoute] State:', { loading, isAuthenticated, user: user?.email, role: user?.role, path: location.pathname });
+
   // Show loading spinner while checking auth
   if (loading) {
+    console.log('[ProtectedRoute] Showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -36,6 +39,7 @@ export function ProtectedRoute({
 
   // Redirect to login if not authenticated
   if (!isAuthenticated || !user) {
+    console.log('[ProtectedRoute] Redirecting to login - not authenticated');
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 

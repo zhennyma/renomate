@@ -32,7 +32,9 @@ export default function ProjectsList() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchProjects = async () => {
+    console.log('[ProjectsList] fetchProjects called, user:', user?.id, user?.email);
     if (!user?.id) {
+      console.log('[ProjectsList] No user.id, setting loading false');
       setLoading(false);
       return;
     }
@@ -41,7 +43,9 @@ export default function ProjectsList() {
       setLoading(true);
       setError(null);
       
+      console.log('[ProjectsList] Fetching projects for consumer:', user.id);
       const projectsData = await getConsumerProjects(user.id);
+      console.log('[ProjectsList] Got projects:', projectsData.length);
       
       // Fetch tasks for each project to calculate progress
       const projectsWithProgress = await Promise.all(

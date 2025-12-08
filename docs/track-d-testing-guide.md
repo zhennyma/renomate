@@ -64,16 +64,17 @@ console.log('Connection test:', error ? 'FAILED' : 'OK', error || data);
 
 - [x] Navigate to http://localhost:8080/auth/signup
 - [x] Select "Homeowner" role (should be selected by default)
-- [ ] Enter test details:
-  - Full Name: `Test Consumer`
-  - Email: `<your-email>+consumer@gmail.com` (use your real email)
-  - Password: `testpass123`
-  - Confirm Password: `testpass123`
-- [ ] Click "Create Account"
-- [ ] Verify success message appears
-- [ ] **In Supabase Dashboard**: Check `auth.users` table for new user
-- [ ] **In Supabase Dashboard**: Check `public.users` table for new record with `role = 'consumer'`
-- [ ] **In Supabase Dashboard**: Check `public.consumer_profiles` table for new profile
+- [x] Enter test details:
+  - Full Name: `Zhen`
+  - Email: `zhennyma@gmail.com`
+  - Password: (user's password)
+- [x] Click "Create Account"
+- [x] Verify success message appears (prompts to check email)
+- [x] Click email confirmation link → lands on `/auth/confirm`
+- [x] Email verified, user record created via RPC
+- [x] **In Supabase Dashboard**: Check `auth.users` table for new user
+- [x] **In Supabase Dashboard**: Check `public.users` table for new record with `role = 'consumer'`
+- [x] **In Supabase Dashboard**: Check `public.consumer_profiles` table for new profile
 
 ### Test Steps - Supplier Sign Up
 
@@ -106,12 +107,12 @@ console.log('Connection test:', error ? 'FAILED' : 'OK', error || data);
 - Invalid credentials show error message
 
 ### Test Steps - Consumer Login
-- [ ] Navigate to http://localhost:8080/auth/login
-- [ ] Enter consumer credentials:
-  - Email: `consumer-test@example.com`
-  - Password: `testpass123`
-- [ ] Click "Sign In"
-- [ ] Verify redirect to `/consumer/projects`
+- [x] Navigate to http://localhost:8080/auth/login
+- [x] Enter consumer credentials:
+  - Email: `zhennyma@gmail.com`
+  - Password: (user's password)
+- [x] Click "Sign In"
+- [x] Verify redirect to `/consumer/projects`
 
 ### Test Steps - Supplier Login
 - [ ] Sign out first (if logged in)
@@ -162,15 +163,16 @@ console.log('Connection test:', error ? 'FAILED' : 'OK', error || data);
 - Each project card shows: title, status badge, location, budget, progress
 
 ### Test Steps
-- [ ] Sign in as Consumer
-- [ ] Navigate to http://localhost:8080/consumer/projects
-- [ ] Verify page header shows "My Projects"
-- [ ] Verify welcome message shows user's name (if set)
-- [ ] Verify empty state displays if no projects exist
-- [ ] **Optional**: Create a test project in Supabase Dashboard:
+- [x] Sign in as Consumer
+- [x] Navigate to http://localhost:8080/consumer/projects
+- [x] Verify page header shows "My Projects"
+- [x] Verify welcome message shows user's name ("Welcome back, Zhen")
+- [x] Verify error state displays if no projects exist (RLS was blocking)
+- [x] Added RLS policy for projects table
+- [x] Created test projects via SQL:
   ```sql
-  INSERT INTO projects (consumer_id, title, status, location_city, location_area)
-  VALUES ('<consumer-user-id>', 'Kitchen Renovation', 'draft', 'Dubai', 'Marina');
+  INSERT INTO projects (consumer_id, title, status, location_city, location_area, ...)
+  VALUES ('c38c5a9f-6045-49b7-897b-01d182909431', 'Kitchen Renovation', 'planning', 'Dubai', 'Downtown');
   ```
 - [ ] Refresh page and verify project appears in list
 - [ ] Verify project card shows status badge

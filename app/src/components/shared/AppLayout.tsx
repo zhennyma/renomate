@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useRole } from '@/contexts/RoleContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { 
   Home, 
@@ -19,7 +19,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { role, clearRole, isConsumer, isSupplier } = useRole();
+  const { user, signOut, isConsumer, isSupplier } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -33,8 +33,8 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const navItems = isConsumer ? consumerNavItems : isSupplier ? supplierNavItems : [];
 
-  const handleLogout = () => {
-    clearRole();
+  const handleLogout = async () => {
+    await signOut();
   };
 
   return (
@@ -115,7 +115,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               onClick={handleLogout}
             >
               <LogOut className="h-5 w-5" />
-              Switch Role
+              Sign Out
             </Button>
           </div>
         </div>
@@ -136,19 +136,19 @@ export function AppLayout({ children }: AppLayoutProps) {
           
           <div className="flex-1" />
 
-          {/* Placeholder account menu */}
+          {/* Account menu */}
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-foreground">
-                {isConsumer ? 'Demo Homeowner' : 'Demo Supplier'}
+                {user?.full_name || (isConsumer ? 'Homeowner' : 'Supplier')}
               </p>
               <p className="text-xs text-muted-foreground">
-                demo@renomate.ae
+                {user?.email || ''}
               </p>
             </div>
             <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
               <span className="text-sm font-medium text-primary">
-                {isConsumer ? 'H' : 'S'}
+                {user?.full_name?.[0]?.toUpperCase() || (isConsumer ? 'H' : 'S')}
               </span>
             </div>
           </div>

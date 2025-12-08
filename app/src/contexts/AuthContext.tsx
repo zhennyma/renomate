@@ -54,6 +54,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Fetch user data from our users table
   const fetchUserData = useCallback(async (supabaseUser: SupabaseUser): Promise<AuthUser | null> => {
+    console.log('[AuthContext] fetchUserData called for:', supabaseUser.id, supabaseUser.email);
     try {
       const { data, error } = await supabase
         .from('users')
@@ -65,13 +66,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .eq('auth_provider_id', supabaseUser.id)
         .single();
 
+      console.log('[AuthContext] fetchUserData result:', { data, error });
+
       if (error) {
         // User record might not exist yet (during signup before trigger runs)
         if (error.code === 'PGRST116') {
-          console.log('User record not found yet, may be pending trigger');
+          console.log('[AuthContext] User record not found yet, may be pending trigger');
           return null;
         }
-        console.error('Error fetching user data:', error);
+        console.error('[AuthContext] Error fetching user data:', error);
         return null;
       }
 
@@ -99,28 +102,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Initialize auth state on mount
   useEffect(() => {
+    console.log('[AuthContext] Initializing auth state...');
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('[AuthContext] getSession result:', { hasSession: !!session, email: session?.user?.email });
       setSession(session);
       if (session?.user) {
         fetchUserData(session.user).then(userData => {
+          console.log('[AuthContext] Initial fetchUserData complete:', { hasUser: !!userData, email: userData?.email });
           setUser(userData);
+          setLoading(false);
+        }).catch(err => {
+          console.error('[AuthContext] Initial fetchUserData failed:', err);
           setLoading(false);
         });
       } else {
+        console.log('[AuthContext] No session, setting loading false');
         setLoading(false);
       }
+    }).catch(err => {
+      console.error('[AuthContext] getSession failed:', err);
+      setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event);
+        console.log('[AuthContext] Auth state change:', event, { email: session?.user?.email });
         setSession(session);
         
         if (session?.user) {
-          const userData = await fetchUserData(session.user);
-          setUser(userData);
+          try {
+            const userData = await fetchUserData(session.user);
+            console.log('[AuthContext] onAuthStateChange fetchUserData complete:', { hasUser: !!userData });
+            setUser(userData);
+          } catch (err) {
+            console.error('[AuthContext] onAuthStateChange fetchUserData failed:', err);
+            setUser(null);
+          }
         } else {
           setUser(null);
         }

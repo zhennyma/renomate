@@ -13,14 +13,17 @@ import type { Project, Room, Task, ProjectPack, LineItem } from '../types';
  * RLS ensures consumers can only see their own projects
  */
 export async function getConsumerProjects(consumerId: string): Promise<Project[]> {
+  console.log('[projectRepository] getConsumerProjects called for:', consumerId);
   const { data, error } = await supabase
     .from('projects')
     .select('*')
     .eq('consumer_id', consumerId)
     .order('created_at', { ascending: false });
   
+  console.log('[projectRepository] getConsumerProjects result:', { data, error });
+  
   if (error) {
-    console.error('Error fetching projects:', error);
+    console.error('[projectRepository] Error fetching projects:', error);
     throw error;
   }
   

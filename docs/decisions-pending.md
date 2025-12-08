@@ -10,6 +10,19 @@
 | # | Track | Decision | Context | Options | Status |
 |---|-------|----------|---------|---------|--------|
 | 1 | Track D | Supabase Auth Rate Limiting | During testing, encountered rate limit errors ("For security purposes, you can only request this after X seconds"). Need to decide appropriate limits for production vs development. | **Option A**: Keep defaults (secure, but slower dev testing)<br>**Option B**: Loosen for dev (faster testing)<br>**Option C**: Disable email confirmation for dev | Pending |
+| 2 | Track D | Database Migration Sync | Discovered `auth_provider_id` column was missing from production database despite being in migration files. Need process to ensure migrations are applied. | **Option A**: Manual SQL via Dashboard<br>**Option B**: Setup `supabase db push`<br>**Option C**: Use Supabase CLI for migrations | Resolved (manual SQL) |
+
+---
+
+## Issues Resolved During Track D
+
+| # | Issue | Resolution |
+|---|-------|------------|
+| 1 | Database trigger for user creation was unreliable | Replaced with RPC function `create_user_on_signup` called from frontend after email verification |
+| 2 | `auth_provider_id` column missing from `users` table | Added via SQL: `ALTER TABLE public.users ADD COLUMN auth_provider_id TEXT UNIQUE` |
+| 3 | RLS policies blocking user data reads | Added SELECT policies for `users`, `consumer_profiles`, `supplier_profiles`, `projects` using `auth.uid()` |
+| 4 | `AppLayout` using old `RoleContext` | Updated to use `AuthContext` instead |
+| 5 | Email confirmation redirect not working | Configured Supabase Site URL and Redirect URLs to use `localhost:8080` |
 
 ---
 
@@ -44,4 +57,5 @@
 
 | # | Date | Decision | Made By | Notes |
 |---|------|----------|---------|-------|
-| - | - | - | - | - |
+| 1 | 2025-12-08 | Use RPC instead of DB trigger for user creation | Dev | Database triggers on `auth.users` were unreliable; RPC called after email verification is more predictable |
+| 2 | 2025-12-08 | Add `auth_provider_id` to users table manually | Dev | Schema was out of sync; added column via SQL Editor |

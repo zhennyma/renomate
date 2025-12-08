@@ -60,6 +60,28 @@ export default function ConfirmEmail() {
 
         if (data.user) {
           console.log('Email verified successfully:', data.user.email);
+          
+          // Create the user record in public.users using RPC
+          // This ensures the user record is created with the correct auth ID
+          const role = data.user.user_metadata?.role || 'consumer';
+          const fullName = data.user.user_metadata?.full_name || null;
+          
+          console.log('Creating user record via RPC:', { role, fullName });
+          const { data: rpcData, error: rpcError } = await supabase.rpc('create_user_on_signup', {
+            p_role: role,
+            p_full_name: fullName,
+          });
+          
+          if (rpcError) {
+            console.error('RPC error creating user:', rpcError);
+            // Don't fail the whole flow - the user might already exist
+            if (!rpcError.message.includes('already')) {
+              console.warn('User creation may have failed, but continuing...');
+            }
+          } else {
+            console.log('User record created/verified:', rpcData);
+          }
+          
           setStatus('success');
         } else {
           setStatus('error');
@@ -77,9 +99,12 @@ export default function ConfirmEmail() {
 
   // Redirect authenticated users to dashboard after a delay
   useEffect(() => {
+    console.log('[ConfirmEmail] Redirect check:', { status, isAuthenticated, hasUser: !!user, userRole: user?.role });
     if (status === 'success' && isAuthenticated && user) {
+      const redirectPath = user.role === 'supplier' ? '/supplier/leads' : '/consumer/projects';
+      console.log('[ConfirmEmail] Will redirect to:', redirectPath);
       const timer = setTimeout(() => {
-        const redirectPath = user.role === 'supplier' ? '/supplier/leads' : '/consumer/projects';
+        console.log('[ConfirmEmail] Redirecting now...');
         navigate(redirectPath, { replace: true });
       }, 2000);
       return () => clearTimeout(timer);

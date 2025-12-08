@@ -5,7 +5,7 @@
 > - Consumer User Journey - `2bc8ba18fd658072b4bcf0743aa39216`  
 > - Supply-side User Journey - `dcd9a321884f44b5b4d0cdec2ceb8c46`  
 > - Apply Design System PRD - `design-system-prd-id`  
-> **Status:** Not Started
+> **Status:** In Progress (Auth complete, Consumer flow working)
 
 ---
 
@@ -48,14 +48,24 @@ app/src/
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| D1 | Update types.ts to match ERD | 60m | Not Started |
-| D2 | Replace mock repositories with Supabase queries | 90m | Not Started |
-| D3 | Consumer: Projects list with real data | 60m | Not Started |
-| D4 | Consumer: Project detail view | 90m | Not Started |
-| D5 | Supplier: Leads list (invites) with real data | 60m | Not Started |
-| D6 | Supplier: Lead detail + quote view | 90m | Not Started |
-| D7 | Apply design system tokens | 60m | Not Started |
-| D8 | Add auth flow (login/signup) | 90m | Not Started |
+| D1 | Update types.ts to match ERD | 60m | ✅ Complete |
+| D2 | Replace mock repositories with Supabase queries | 90m | ✅ Complete |
+| D3 | Consumer: Projects list with real data | 60m | ✅ Complete |
+| D4 | Consumer: Project detail view | 90m | ✅ Complete |
+| D5 | Supplier: Leads list (invites) with real data | 60m | ✅ Complete |
+| D6 | Supplier: Lead detail + quote view | 90m | ✅ Complete |
+| D7 | Apply design system tokens | 60m | ✅ Complete |
+| D8 | Add auth flow (login/signup) | 90m | ✅ Complete |
+
+### Additional Work Completed
+
+| Task | Notes |
+|------|-------|
+| Email confirmation flow | Added `/auth/confirm` page with token verification |
+| Resend confirmation email | Added to Login page for unconfirmed users |
+| RPC for user creation | Replaced unreliable database trigger with `create_user_on_signup` RPC |
+| Schema fix: auth_provider_id | Added missing column to `users` table |
+| RLS policies | Fixed policies for users, consumer_profiles, supplier_profiles, projects |
 
 ---
 
