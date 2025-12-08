@@ -1,7 +1,7 @@
 # Renomate MVP Build Plan
 
-> **Last Updated:** 2025-12-07  
-> **Status:** In Progress (Track A & B Complete, Ready for Track C)  
+> **Last Updated:** 2025-12-08  
+> **Status:** In Progress (Track A, B & C Complete, Ready for Track D)  
 > **Notion is the SINGLE source of truth.** If code or intuition disagree with Notion, treat Notion as canonical.
 
 ---
@@ -120,7 +120,7 @@
 
 ### What's Missing
 - ❌ Real Supabase connection in UI (app still uses mocks)
-- ❌ RLS policies
+- ✅ RLS policies (Track C complete)
 - ❌ Backend services for engines
 - ❌ WhatsApp webhook
 - ❌ Auth flow (login/signup)
@@ -165,19 +165,21 @@
 
 **Completed:** All 25+ tables pushed to Supabase. Alignment migration applied to fix enum values to match ERD docs.
 
-### Track C: RLS Baseline
+### Track C: RLS Baseline ✅
 **Notion Inputs:** RLS Matrix, Implement MVP RLS baseline PRD
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| C1 | RLS: users and profiles | 45m | Not Started |
-| C2 | RLS: projects and rooms | 60m | Not Started |
-| C3 | RLS: project_supplier_invites | 45m | Not Started |
-| C4 | RLS: quotes and quote_line_items | 45m | Not Started |
-| C5 | RLS: samples and showroom_visits | 45m | Not Started |
-| C6 | RLS: tasks | 45m | Not Started |
-| C7 | Admin bypass policies | 30m | Not Started |
-| C8 | Test RLS with different user roles | 60m | Not Started |
+| C1 | RLS: users and profiles | 45m | Done |
+| C2 | RLS: projects and rooms | 60m | Done |
+| C3 | RLS: project_supplier_invites | 45m | Done |
+| C4 | RLS: quotes and quote_line_items | 45m | Done |
+| C5 | RLS: samples and showroom_visits | 45m | Done |
+| C6 | RLS: tasks | 45m | Done |
+| C7 | Admin bypass policies | 30m | Done |
+| C8 | Test RLS with different user roles | 60m | Done |
+
+**Completed:** All RLS policies applied via migration `20251208000001_rls_baseline.sql`. Helper functions (`user_role`, `is_admin`, `supplier_id`) created. 24 tables secured with appropriate policies for consumer, supplier, and admin roles.
 
 ### Track D: Core App Shell
 **Notion Inputs:** Lovable App Shell PRD, Consumer Journey, Supply-side Journey
@@ -275,6 +277,7 @@ Based on dependencies:
 | 2025-12-07 | Track B alignment migration added | Fixed discrepancies between ERD docs and initial migration (status/priority/source enums) |
 | 2025-12-07 | App types synced with ERD | Updated `lib/types.ts` and `integrations/supabase/types.ts` to match DB schema |
 | 2025-12-07 | Track B docs updated | Added documentation for change_orders, payments, whatsapp, and audit_logs tables |
+| 2025-12-08 | Track C fully complete | RLS policies applied for all 24 tables with helper functions |
 
 ---
 
@@ -283,7 +286,7 @@ Based on dependencies:
 - [Cursor Working Rules](./cursor-working-rules.md)
 - [Track A: Infra](./track-a-infra.md) ✅
 - [Track B: ERD](./track-b-erd.md) ✅
-- [Track C: RLS](./track-c-rls.md)
+- [Track C: RLS](./track-c-rls.md) ✅
 - [Track D: App Shell](./track-d-app-shell.md)
 - [Track E: Engines](./track-e-engines.md)
 - [Track F: WhatsApp](./track-f-whatsapp.md)

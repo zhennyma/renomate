@@ -1,0 +1,19 @@
+{
+  "name": "renomate-rls-tests",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "npx tsx verify_rls_anon.ts",
+    "test:rls": "npx tsx verify_rls_anon.ts",
+    "test:full": "npx tsx run_rls_tests.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "RLS verification tests for Renomate",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.86.2",
+    "dotenv": "^17.2.3",
+    "tsx": "^4.21.0"
+  }
+}

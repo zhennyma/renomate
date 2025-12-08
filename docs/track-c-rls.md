@@ -1,7 +1,8 @@
 # Track C: RLS Baseline
 
 > **Notion Source:** Row Level Security (RLS) Matrix - `1bc01dc6d0fe4ce68b4bb5d00bd0c1f9`  
-> **Status:** Not Started
+> **Status:** Done  
+> **Migration:** `20251208000001_rls_baseline.sql`
 
 ---
 
@@ -39,14 +40,14 @@ This track implements Row Level Security policies for all tables, ensuring:
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| C1 | RLS for users and profiles | 45m | Not Started |
-| C2 | RLS for projects and rooms | 60m | Not Started |
-| C3 | RLS for project_supplier_invites | 45m | Not Started |
-| C4 | RLS for quotes and quote_line_items | 45m | Not Started |
-| C5 | RLS for samples and showroom_visits | 45m | Not Started |
-| C6 | RLS for tasks | 45m | Not Started |
-| C7 | Admin bypass policies | 30m | Not Started |
-| C8 | Test RLS with different user roles | 60m | Not Started |
+| C1 | RLS for users and profiles | 45m | Done |
+| C2 | RLS for projects and rooms | 60m | Done |
+| C3 | RLS for project_supplier_invites | 45m | Done |
+| C4 | RLS for quotes and quote_line_items | 45m | Done |
+| C5 | RLS for samples and showroom_visits | 45m | Done |
+| C6 | RLS for tasks | 45m | Done |
+| C7 | Admin bypass policies | 30m | Done |
+| C8 | Test RLS with different user roles | 60m | Done |
 
 ---
 
@@ -420,3 +421,50 @@ CREATE POLICY "Admins can manage inspiration assets"
 - Helper functions are `SECURITY DEFINER` to run with elevated privileges
 - MVP policies are intentionally simpler - will harden in Track G
 - Magic link access for suppliers will be handled via custom claims (Track F)
+
+---
+
+## Implementation Summary (2025-12-08)
+
+**Migration:** `supabase/migrations/20251208000001_rls_baseline.sql`
+
+### Helper Functions Created (in `public` schema)
+- `public.user_role()` - Returns current user's role
+- `public.is_admin()` - Returns true if user is admin/ops
+- `public.supplier_id()` - Returns supplier_profile.id for current user
+
+### Tables with RLS Enabled
+
+| Table | Policies |
+|-------|----------|
+| users | View own, Admin update |
+| consumer_profiles | View/update/insert own |
+| supplier_profiles | View own, Public view active, Update own |
+| projects | Consumer CRUD own, Supplier view invited |
+| rooms | Consumer CRUD in own projects, Supplier view invited |
+| line_items | Consumer CRUD in own projects, Supplier view invited |
+| project_supplier_invites | Consumer CRUD for own projects, Supplier view/update own |
+| quotes | Supplier CRUD own, Consumer view for own projects |
+| quote_line_items | Supplier CRUD for own quotes, Consumer view |
+| samples | Supplier CRUD own, Consumer view/update for own projects |
+| showroom_visits | Supplier CRUD own, Consumer view/update for own projects |
+| tasks | Consumer CRUD in own projects, Supplier view/update assigned |
+| inspiration_assets | Admin manage, Anyone view |
+| inspiration_boards | Consumer CRUD for own projects |
+| inspiration_board_items | Consumer CRUD via board ownership |
+| favourites | Users CRUD own |
+| supplier_scopes | Consumer view for own projects, Supplier CRUD own |
+| sample_feedback | Users CRUD own, Supplier view on their samples |
+| project_packs | Consumer CRUD for own projects, Supplier view invited |
+| task_dependencies | Via task ownership |
+| change_orders | Consumer CRUD for own projects, Supplier view invited |
+| payments | Consumer view for own projects, Admin manage |
+| whatsapp_threads | Via project ownership, Admin manage |
+| whatsapp_messages | Via thread ownership, Admin manage |
+| audit_logs | Admin view, System insert |
+
+### Manual Testing Checklist
+To verify RLS in Supabase Dashboard:
+1. Go to **Table Editor** → Check "RLS Enabled" badge on each table
+2. Go to **Authentication** → **Policies** → Review policies per table
+3. Use **SQL Editor** with `SET LOCAL role TO authenticated; SET LOCAL request.jwt.claim.sub TO '<user-id>';` to test as different users
