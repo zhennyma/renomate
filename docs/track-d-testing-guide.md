@@ -58,11 +58,15 @@ console.log('Connection test:', error ? 'FAILED' : 'OK', error || data);
 - Shows success message with link to sign in
 
 ### Test Steps - Consumer Sign Up
+
+> **Note**: Use a real email address. Supabase rejects fake domains like `example.com`.
+> Tip: Use Gmail's + alias: `youremail+consumer@gmail.com` (goes to your inbox)
+
 - [ ] Navigate to http://localhost:8080/auth/signup
 - [ ] Select "Homeowner" role (should be selected by default)
 - [ ] Enter test details:
   - Full Name: `Test Consumer`
-  - Email: `consumer-test@example.com`
+  - Email: `<your-email>+consumer@gmail.com` (use your real email)
   - Password: `testpass123`
   - Confirm Password: `testpass123`
 - [ ] Click "Create Account"
@@ -72,11 +76,14 @@ console.log('Connection test:', error ? 'FAILED' : 'OK', error || data);
 - [ ] **In Supabase Dashboard**: Check `public.consumer_profiles` table for new profile
 
 ### Test Steps - Supplier Sign Up
+
+> **Note**: Use a different email alias for the supplier account.
+
 - [ ] Navigate to http://localhost:8080/auth/signup
 - [ ] Select "Supplier" role
 - [ ] Enter test details:
   - Company Name: `Test Supplier Co`
-  - Email: `supplier-test@example.com`
+  - Email: `<your-email>+supplier@gmail.com` (use your real email)
   - Password: `testpass123`
   - Confirm Password: `testpass123`
 - [ ] Click "Create Account"
