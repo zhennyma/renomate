@@ -2,11 +2,12 @@
  * Email Confirmation Page
  * 
  * Landing page after user clicks the email confirmation link.
- * Handles the confirmation token from Supabase.
+ * Verifies the token with Supabase to confirm the email.
  */
 
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,33 +23,57 @@ export default function ConfirmEmail() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check for error in URL params (Supabase redirects with error if confirmation fails)
-    const error = searchParams.get('error');
-    const errorDescription = searchParams.get('error_description');
-    
-    if (error) {
-      setStatus('error');
-      setErrorMessage(errorDescription || 'Email confirmation failed');
-      return;
-    }
-
-    // If we have a valid session, confirmation was successful
-    // Supabase handles the token exchange automatically
-    const checkConfirmation = async () => {
-      // Give Supabase a moment to process the confirmation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    const verifyEmail = async () => {
+      // Check for error in URL params
+      const error = searchParams.get('error');
+      const errorDescription = searchParams.get('error_description');
       
-      if (isAuthenticated && user) {
-        setStatus('success');
-      } else {
-        // If not authenticated after delay, might still be processing
-        // or the link was just for confirmation without auto-login
-        setStatus('success');
+      if (error) {
+        setStatus('error');
+        setErrorMessage(errorDescription || 'Email confirmation failed');
+        return;
+      }
+
+      // Get token_hash and type from URL
+      const tokenHash = searchParams.get('token_hash');
+      const type = searchParams.get('type');
+
+      if (!tokenHash || !type) {
+        setStatus('error');
+        setErrorMessage('Invalid confirmation link. Missing token or type.');
+        return;
+      }
+
+      try {
+        // Verify the OTP token with Supabase
+        const { data, error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: type as 'signup' | 'email',
+        });
+
+        if (verifyError) {
+          console.error('Verification error:', verifyError);
+          setStatus('error');
+          setErrorMessage(verifyError.message || 'Failed to verify email');
+          return;
+        }
+
+        if (data.user) {
+          console.log('Email verified successfully:', data.user.email);
+          setStatus('success');
+        } else {
+          setStatus('error');
+          setErrorMessage('Verification completed but no user returned');
+        }
+      } catch (err) {
+        console.error('Unexpected error during verification:', err);
+        setStatus('error');
+        setErrorMessage('An unexpected error occurred during verification');
       }
     };
 
-    checkConfirmation();
-  }, [searchParams, isAuthenticated, user]);
+    verifyEmail();
+  }, [searchParams]);
 
   // Redirect authenticated users to dashboard after a delay
   useEffect(() => {
