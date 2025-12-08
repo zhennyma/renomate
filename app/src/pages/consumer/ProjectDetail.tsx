@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { AppLayout } from '@/components/shared/AppLayout';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { ErrorState } from '@/components/shared/ErrorState';
-import { ProjectStatusBadge, BudgetBandBadge, TaskStatusBadge } from '@/components/shared/StatusBadge';
+import { ProjectStatusBadge, TaskStatusBadge, formatBudgetRange } from '@/components/shared/StatusBadge';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,22 +13,21 @@ import {
   MapPin, 
   Calendar,
   Home,
-  DollarSign,
+  Wallet,
   Clock,
-  AlertTriangle,
   CheckCircle2,
-  Users,
-  Package
+  Package,
+  FileText
 } from 'lucide-react';
 import { 
   getProjectById, 
   getProjectRooms, 
   getProjectTasks, 
   getProjectPack,
+  getProjectLineItems,
   calculateProjectProgress 
 } from '@/lib/repositories/projectRepository';
-import { getBlindSpotIcon } from '@/lib/repositories/mockData';
-import type { Project, Room, Task, ProjectPack } from '@/lib/types';
+import type { Project, Room, Task, ProjectPack, LineItem } from '@/lib/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +36,7 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<Project | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [projectPack, setProjectPack] = useState<ProjectPack | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,10 +48,11 @@ export default function ProjectDetail() {
       setLoading(true);
       setError(null);
       
-      const [projectData, roomsData, tasksData, packData] = await Promise.all([
+      const [projectData, roomsData, tasksData, lineItemsData, packData] = await Promise.all([
         getProjectById(projectId),
         getProjectRooms(projectId),
         getProjectTasks(projectId),
+        getProjectLineItems(projectId),
         getProjectPack(projectId),
       ]);
       
@@ -63,6 +64,7 @@ export default function ProjectDetail() {
       setProject(projectData);
       setRooms(roomsData);
       setTasks(tasksData);
+      setLineItems(lineItemsData);
       setProjectPack(packData);
     } catch (err) {
       setError('Failed to load project details. Please try again.');
@@ -93,38 +95,42 @@ export default function ProjectDetail() {
   }
 
   const progress = calculateProjectProgress(tasks);
-  const propertyTypeLabels = {
+  
+  const propertyTypeLabels: Record<string, string> = {
     apartment: 'Apartment',
     villa: 'Villa',
     townhouse: 'Townhouse',
     penthouse: 'Penthouse',
-  };
-
-  const renovationDepthLabels = {
-    cosmetic: 'Cosmetic',
-    partial: 'Partial',
-    full: 'Full',
-    structural: 'Structural',
-  };
-
-  const roomTypeLabels = {
-    kitchen: 'Kitchen',
-    bathroom: 'Bathroom',
-    bedroom: 'Bedroom',
-    living_room: 'Living Room',
-    dining_room: 'Dining Room',
+    studio: 'Studio',
     office: 'Office',
-    balcony: 'Balcony',
-    other: 'Other',
   };
 
-  const taskOwnerLabels = {
-    consumer: 'You',
-    designer: 'Designer',
-    contractor: 'Contractor',
-    supplier: 'Supplier',
-    building: 'Building',
+  const renovationDepthLabels: Record<string, string> = {
+    light: 'Light',
+    medium: 'Medium',
+    full: 'Full',
   };
+
+  const roomLifecycleLabels: Record<string, string> = {
+    draft: 'Draft',
+    open_for_bids: 'Open for Bids',
+    sourcing: 'Sourcing',
+    execution: 'In Execution',
+    completed: 'Completed',
+    paused: 'Paused',
+  };
+
+  const getTaskStatusColor = (status: string) => {
+    switch (status) {
+      case 'done': return 'bg-green-500';
+      case 'in_progress': return 'bg-yellow-500';
+      case 'blocked': return 'bg-red-500';
+      case 'canceled': return 'bg-gray-400';
+      default: return 'bg-gray-300';
+    }
+  };
+
+  const location = [project.location_area, project.location_city].filter(Boolean).join(', ');
 
   return (
     <AppLayout>
@@ -143,25 +149,34 @@ export default function ProjectDetail() {
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-                {project.name}
+                {project.title}
               </h1>
               <div className="flex flex-wrap items-center gap-3">
                 <ProjectStatusBadge status={project.status} />
-                <BudgetBandBadge band={project.budget_band} />
-                <Badge variant="secondary">{propertyTypeLabels[project.property_type]}</Badge>
+                {project.property_type && (
+                  <Badge variant="secondary">{propertyTypeLabels[project.property_type] || project.property_type}</Badge>
+                )}
               </div>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <MapPin className="h-4 w-4" />
-              {project.location}
-            </span>
-            {project.start_date && project.target_end_date && (
+            {location && (
+              <span className="flex items-center gap-1.5">
+                <MapPin className="h-4 w-4" />
+                {location}
+              </span>
+            )}
+            {project.start_date_desired && (
               <span className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4" />
-                {format(new Date(project.start_date), 'MMM d, yyyy')} - {format(new Date(project.target_end_date), 'MMM d, yyyy')}
+                Target start: {format(new Date(project.start_date_desired), 'MMM d, yyyy')}
+              </span>
+            )}
+            {(project.estimated_budget_min || project.estimated_budget_max) && (
+              <span className="flex items-center gap-1.5">
+                <Wallet className="h-4 w-4" />
+                {formatBudgetRange(project.estimated_budget_min, project.estimated_budget_max)}
               </span>
             )}
           </div>
@@ -171,18 +186,20 @@ export default function ProjectDetail() {
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Progress card */}
-            <Card className="animate-slide-up">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-card-foreground">Overall Progress</h3>
-                  <span className="text-2xl font-bold text-primary">{progress.percentage}%</span>
-                </div>
-                <Progress value={progress.percentage} className="h-3 mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  {progress.completed} of {progress.total} tasks completed
-                </p>
-              </CardContent>
-            </Card>
+            {tasks.length > 0 && (
+              <Card className="animate-slide-up">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-card-foreground">Overall Progress</h3>
+                    <span className="text-2xl font-bold text-primary">{progress.percentage}%</span>
+                  </div>
+                  <Progress value={progress.percentage} className="h-3 mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    {progress.completed} of {progress.total} tasks completed
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Tabs */}
             <Tabs defaultValue="rooms" className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
@@ -195,6 +212,10 @@ export default function ProjectDetail() {
                   <CheckCircle2 className="h-4 w-4" />
                   Tasks ({tasks.length})
                 </TabsTrigger>
+                <TabsTrigger value="items" className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  Line Items ({lineItems.length})
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="rooms" className="mt-4">
@@ -202,7 +223,7 @@ export default function ProjectDetail() {
                   <CardContent className="p-0">
                     {rooms.length === 0 ? (
                       <div className="p-8 text-center text-muted-foreground">
-                        No rooms added yet
+                        No rooms added yet. Add rooms to define your project scope.
                       </div>
                     ) : (
                       <div className="divide-y divide-border">
@@ -211,13 +232,21 @@ export default function ProjectDetail() {
                             <div>
                               <p className="font-medium text-card-foreground">{room.name}</p>
                               <p className="text-sm text-muted-foreground">
-                                {roomTypeLabels[room.room_type]}
+                                {room.room_type || 'Room'}
                                 {room.area_sqm && ` • ${room.area_sqm} sqm`}
+                                {room.floor && ` • Floor ${room.floor}`}
                               </p>
                             </div>
-                            <Badge variant="secondary">
-                              {renovationDepthLabels[room.renovation_depth]}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              {room.renovation_depth && (
+                                <Badge variant="outline">
+                                  {renovationDepthLabels[room.renovation_depth] || room.renovation_depth}
+                                </Badge>
+                              )}
+                              <Badge variant="secondary">
+                                {roomLifecycleLabels[room.lifecycle_state] || room.lifecycle_state}
+                              </Badge>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -231,7 +260,7 @@ export default function ProjectDetail() {
                   <CardContent className="p-0">
                     {tasks.length === 0 ? (
                       <div className="p-8 text-center text-muted-foreground">
-                        No tasks created yet
+                        No tasks created yet. Tasks will be generated as your project progresses.
                       </div>
                     ) : (
                       <div className="divide-y divide-border">
@@ -240,20 +269,45 @@ export default function ProjectDetail() {
                             <div className="flex items-center gap-3">
                               <div className={cn(
                                 "w-2 h-2 rounded-full",
-                                task.status === 'completed' && "bg-success",
-                                task.status === 'in_progress' && "bg-warning",
-                                task.status === 'pending' && "bg-muted-foreground",
-                                task.status === 'blocked' && "bg-info"
+                                getTaskStatusColor(task.status)
                               )} />
                               <div>
-                                <p className="font-medium text-card-foreground">{task.name}</p>
+                                <p className="font-medium text-card-foreground">{task.title}</p>
                                 <p className="text-sm text-muted-foreground">
-                                  Owner: {taskOwnerLabels[task.owner]}
-                                  {task.due_date && ` • Due ${format(new Date(task.due_date), 'MMM d')}`}
+                                  {task.type && `${task.type} • `}
+                                  {task.due_date && `Due ${format(new Date(task.due_date), 'MMM d')}`}
+                                  {task.is_blocking && ' • Blocking'}
                                 </p>
                               </div>
                             </div>
                             <TaskStatusBadge status={task.status} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="items" className="mt-4">
+                <Card>
+                  <CardContent className="p-0">
+                    {lineItems.length === 0 ? (
+                      <div className="p-8 text-center text-muted-foreground">
+                        No line items defined yet. Line items will be created as you define your project scope.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {lineItems.map((item) => (
+                          <div key={item.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                            <div>
+                              <p className="font-medium text-card-foreground">{item.description}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {item.category} • {item.quantity} {item.unit}
+                                {item.priority && ` • ${item.priority === 'must_have' ? 'Must Have' : 'Nice to Have'}`}
+                              </p>
+                            </div>
+                            <Badge variant="outline">{item.status}</Badge>
                           </div>
                         ))}
                       </div>
@@ -273,21 +327,18 @@ export default function ProjectDetail() {
                   Project Pack
                 </CardTitle>
                 <CardDescription>
-                  Summary generated from your project details
+                  Summary of your project
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Budget */}
                 <div className="p-3 rounded-lg bg-secondary">
                   <div className="flex items-center gap-2 mb-1">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium text-secondary-foreground">Budget</span>
                   </div>
-                  <p className="text-xl font-bold text-foreground">
-                    AED {projectPack?.budget_summary.total.toLocaleString() || project.estimated_budget?.toLocaleString() || 'TBD'}
-                  </p>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {project.budget_band} tier
+                  <p className="text-lg font-bold text-foreground">
+                    {formatBudgetRange(project.estimated_budget_min, project.estimated_budget_max)}
                   </p>
                 </div>
 
@@ -297,59 +348,45 @@ export default function ProjectDetail() {
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium text-secondary-foreground">Timeline</span>
                   </div>
-                  <p className="text-xl font-bold text-foreground">
-                    {projectPack?.timeline_summary.estimated_duration_weeks || '—'} weeks
+                  <p className="text-lg font-bold text-foreground">
+                    {project.start_date_desired 
+                      ? format(new Date(project.start_date_desired), 'MMM d, yyyy')
+                      : 'Start date TBD'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Target: {project.target_end_date ? format(new Date(project.target_end_date), 'MMM d, yyyy') : 'TBD'}
+                    Target start date
                   </p>
                 </div>
 
-                {/* Rooms count */}
-                <div className="p-3 rounded-lg bg-secondary">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Home className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-secondary-foreground">Rooms</span>
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-secondary text-center">
+                    <p className="text-2xl font-bold text-foreground">{rooms.length}</p>
+                    <p className="text-xs text-muted-foreground">Rooms</p>
                   </div>
-                  <p className="text-xl font-bold text-foreground">
-                    {rooms.length} rooms
-                  </p>
+                  <div className="p-3 rounded-lg bg-secondary text-center">
+                    <p className="text-2xl font-bold text-foreground">{lineItems.length}</p>
+                    <p className="text-xs text-muted-foreground">Line Items</p>
+                  </div>
                 </div>
 
-                {/* Blind spots */}
-                {projectPack && projectPack.blind_spots.length > 0 && (
+                {/* Pack Status */}
+                {projectPack ? (
                   <div className="pt-3 border-t border-border">
-                    <div className="flex items-center gap-2 mb-3">
-                      <AlertTriangle className="h-4 w-4 text-warning" />
-                      <span className="text-sm font-medium text-foreground">Blind Spots & Risks</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Pack Status</span>
+                      <Badge variant={projectPack.status === 'published' ? 'default' : 'secondary'}>
+                        {projectPack.status}
+                      </Badge>
                     </div>
-                    <div className="space-y-2">
-                      {projectPack.blind_spots.map((spot) => (
-                        <div 
-                          key={spot.id}
-                          className={cn(
-                            "p-2 rounded-md text-sm",
-                            spot.severity === 'high' && "bg-destructive/10",
-                            spot.severity === 'medium' && "bg-warning/10",
-                            spot.severity === 'low' && "bg-muted"
-                          )}
-                        >
-                          <div className="flex items-start gap-2">
-                            <span>{getBlindSpotIcon(spot.category)}</span>
-                            <div>
-                              <p className="font-medium text-card-foreground">{spot.title}</p>
-                              <p className="text-xs text-muted-foreground">{spot.description}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Version {projectPack.version}
+                      {projectPack.generated_at && ` • Generated ${format(new Date(projectPack.generated_at), 'MMM d')}`}
+                    </p>
                   </div>
-                )}
-
-                {!projectPack && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Project Pack will be generated once more details are added.
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4 border-t border-border">
+                    Project Pack will be generated once you add more project details.
                   </p>
                 )}
               </CardContent>

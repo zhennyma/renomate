@@ -1,43 +1,50 @@
 import { Badge } from '@/components/ui/badge';
-import type { ProjectStatus, LeadStatus, FitScore, BudgetBand, TaskStatus } from '@/lib/types';
+import type { 
+  ProjectStatus, 
+  DecisionStatus, 
+  TaskStatus,
+  FitScoreLevel,
+  BudgetTier
+} from '@/lib/types';
 
-// Project Status
-const projectStatusConfig: Record<ProjectStatus, { label: string; variant: 'success' | 'warning' | 'info' | 'muted' | 'default' }> = {
+// Project Status - matches real database schema
+const projectStatusConfig: Record<ProjectStatus, { label: string; variant: 'success' | 'warning' | 'info' | 'muted' | 'default' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'muted' },
-  planning: { label: 'Planning', variant: 'info' },
-  in_progress: { label: 'In Progress', variant: 'warning' },
+  ready_for_review: { label: 'Ready for Review', variant: 'info' },
+  open_for_bids: { label: 'Open for Bids', variant: 'info' },
+  sourcing: { label: 'Sourcing', variant: 'warning' },
+  execution: { label: 'In Execution', variant: 'warning' },
   completed: { label: 'Completed', variant: 'success' },
-  on_hold: { label: 'On Hold', variant: 'muted' },
+  canceled: { label: 'Canceled', variant: 'destructive' },
 };
 
 export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
-  const config = projectStatusConfig[status];
+  const config = projectStatusConfig[status] || { label: status, variant: 'muted' as const };
   return <Badge variant={config.variant}>{config.label}</Badge>;
 }
 
-// Lead Status
-const leadStatusConfig: Record<LeadStatus, { label: string; variant: 'new' | 'viewed' | 'responded' | 'success' | 'muted' }> = {
-  new: { label: 'New', variant: 'new' },
-  viewed: { label: 'Viewed', variant: 'viewed' },
-  responded: { label: 'Responded', variant: 'responded' },
+// Decision Status (for supplier invites/leads)
+const decisionStatusConfig: Record<DecisionStatus, { label: string; variant: 'success' | 'warning' | 'info' | 'muted' | 'default' | 'destructive' }> = {
+  pending: { label: 'Pending', variant: 'info' },
   accepted: { label: 'Accepted', variant: 'success' },
   declined: { label: 'Declined', variant: 'muted' },
+  waitlisted: { label: 'Waitlisted', variant: 'warning' },
 };
 
-export function LeadStatusBadge({ status }: { status: LeadStatus }) {
-  const config = leadStatusConfig[status];
+export function DecisionStatusBadge({ status }: { status: DecisionStatus }) {
+  const config = decisionStatusConfig[status] || { label: status, variant: 'muted' as const };
   return <Badge variant={config.variant}>{config.label}</Badge>;
 }
 
 // Fit Score
-const fitScoreConfig: Record<FitScore, { label: string; variant: 'fitHigh' | 'fitMedium' | 'fitLow' }> = {
-  high: { label: 'High Fit', variant: 'fitHigh' },
-  medium: { label: 'Medium Fit', variant: 'fitMedium' },
-  low: { label: 'Low Fit', variant: 'fitLow' },
+const fitScoreConfig: Record<FitScoreLevel, { label: string; variant: 'success' | 'warning' | 'muted' }> = {
+  high: { label: 'High Fit', variant: 'success' },
+  medium: { label: 'Medium Fit', variant: 'warning' },
+  low: { label: 'Low Fit', variant: 'muted' },
 };
 
-export function FitScoreBadge({ score, value }: { score: FitScore; value?: number }) {
-  const config = fitScoreConfig[score];
+export function FitScoreBadge({ level, value }: { level: FitScoreLevel; value?: number }) {
+  const config = fitScoreConfig[level];
   return (
     <Badge variant={config.variant}>
       {config.label}{value !== undefined && ` (${value}%)`}
@@ -45,28 +52,55 @@ export function FitScoreBadge({ score, value }: { score: FitScore; value?: numbe
   );
 }
 
-// Budget Band
-const budgetBandConfig: Record<BudgetBand, { label: string; variant: 'economy' | 'standard' | 'premium' | 'luxury' }> = {
-  economy: { label: 'Economy', variant: 'economy' },
-  standard: { label: 'Standard', variant: 'standard' },
-  premium: { label: 'Premium', variant: 'premium' },
-  luxury: { label: 'Luxury', variant: 'luxury' },
+// Budget Tier
+const budgetTierConfig: Record<BudgetTier, { label: string; className: string }> = {
+  low: { label: 'Budget', className: 'bg-gray-100 text-gray-700 border-gray-200' },
+  mid: { label: 'Standard', className: 'bg-blue-100 text-blue-700 border-blue-200' },
+  premium: { label: 'Premium', className: 'bg-purple-100 text-purple-700 border-purple-200' },
 };
 
-export function BudgetBandBadge({ band }: { band: BudgetBand }) {
-  const config = budgetBandConfig[band];
-  return <Badge variant={config.variant}>{config.label}</Badge>;
+export function BudgetTierBadge({ tier }: { tier: BudgetTier | undefined }) {
+  if (!tier) return null;
+  const config = budgetTierConfig[tier];
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.className}`}>
+      {config.label}
+    </span>
+  );
 }
 
 // Task Status
-const taskStatusConfig: Record<TaskStatus, { label: string; variant: 'success' | 'warning' | 'info' | 'muted' }> = {
-  pending: { label: 'Pending', variant: 'muted' },
+const taskStatusConfig: Record<TaskStatus, { label: string; variant: 'success' | 'warning' | 'info' | 'muted' | 'destructive' }> = {
+  todo: { label: 'To Do', variant: 'muted' },
   in_progress: { label: 'In Progress', variant: 'warning' },
-  completed: { label: 'Done', variant: 'success' },
-  blocked: { label: 'Blocked', variant: 'info' },
+  blocked: { label: 'Blocked', variant: 'destructive' },
+  done: { label: 'Done', variant: 'success' },
+  canceled: { label: 'Canceled', variant: 'muted' },
 };
 
 export function TaskStatusBadge({ status }: { status: TaskStatus }) {
-  const config = taskStatusConfig[status];
+  const config = taskStatusConfig[status] || { label: status, variant: 'muted' as const };
   return <Badge variant={config.variant}>{config.label}</Badge>;
+}
+
+// Format budget range for display
+export function formatBudgetRange(min?: number, max?: number): string {
+  if (!min && !max) return 'Budget TBD';
+  
+  const formatter = new Intl.NumberFormat('en-AE', {
+    style: 'currency',
+    currency: 'AED',
+    maximumFractionDigits: 0,
+  });
+  
+  if (min && max) {
+    return `${formatter.format(min)} - ${formatter.format(max)}`;
+  }
+  if (min) {
+    return `From ${formatter.format(min)}`;
+  }
+  if (max) {
+    return `Up to ${formatter.format(max)}`;
+  }
+  return 'Budget TBD';
 }

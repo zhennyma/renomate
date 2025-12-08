@@ -12,20 +12,24 @@ const badgeVariants = cva(
         secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
-        // Custom variants for Renomate
-        success: "border-transparent bg-success/15 text-success",
-        warning: "border-transparent bg-warning/15 text-warning-foreground",
-        info: "border-transparent bg-info/15 text-info",
+        
+        // Status variants for Renomate
+        success: "border-transparent bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+        warning: "border-transparent bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+        info: "border-transparent bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
         muted: "border-transparent bg-muted text-muted-foreground",
-        // Status badges
+        
+        // Lead/Invite status badges (legacy compatibility)
         new: "border-transparent bg-primary/15 text-primary font-medium",
-        viewed: "border-transparent bg-info/15 text-info font-medium",
-        responded: "border-transparent bg-success/15 text-success font-medium",
-        // Fit score badges
-        fitHigh: "border-transparent bg-success/15 text-success font-medium",
-        fitMedium: "border-transparent bg-warning/15 text-warning-foreground font-medium",
-        fitLow: "border-transparent bg-muted text-muted-foreground font-medium",
-        // Budget bands
+        viewed: "border-transparent bg-info/15 text-blue-600 font-medium",
+        responded: "border-transparent bg-success/15 text-emerald-600 font-medium",
+        
+        // Fit score badges (legacy compatibility)
+        fitHigh: "border-transparent bg-emerald-100 text-emerald-700 font-medium",
+        fitMedium: "border-transparent bg-amber-100 text-amber-700 font-medium",
+        fitLow: "border-transparent bg-gray-100 text-gray-600 font-medium",
+        
+        // Budget bands (legacy compatibility)
         economy: "border-transparent bg-muted text-muted-foreground",
         standard: "border-transparent bg-secondary text-secondary-foreground",
         premium: "border-transparent bg-primary/15 text-primary",

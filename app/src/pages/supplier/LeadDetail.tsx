@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { AppLayout } from '@/components/shared/AppLayout';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { ErrorState } from '@/components/shared/ErrorState';
-import { LeadStatusBadge, FitScoreBadge, BudgetBandBadge } from '@/components/shared/StatusBadge';
+import { DecisionStatusBadge, FitScoreBadge, formatBudgetRange } from '@/components/shared/StatusBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,37 +14,36 @@ import {
   MapPin, 
   Calendar,
   Home,
-  DollarSign,
+  Wallet,
   Clock,
-  AlertTriangle,
   FileText,
   Send,
-  Save,
   Package,
   Hammer,
   Palette,
-  Truck
+  Truck,
+  Check,
+  X
 } from 'lucide-react';
 import { 
-  getLeadById, 
-  getLeadProjectPack, 
-  getLeadProjectRooms,
-  saveDraftQuoteNotes 
+  getLeadWithDetails,
+  updateInviteDecision
 } from '@/lib/repositories/supplierRepository';
-import { getBlindSpotIcon } from '@/lib/repositories/mockData';
-import type { ProjectSupplierInvite, ProjectPack, Room } from '@/lib/types';
+import type { ProjectSupplierInvite, Project, ProjectPack, Room, LineItem } from '@/lib/types';
+import { getFitScoreLevel } from '@/lib/types';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 
 export default function LeadDetail() {
   const { leadId } = useParams<{ leadId: string }>();
-  const [lead, setLead] = useState<ProjectSupplierInvite | null>(null);
+  const [invite, setInvite] = useState<ProjectSupplierInvite | null>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [projectPack, setProjectPack] = useState<ProjectPack | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quoteNotes, setQuoteNotes] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [updatingDecision, setUpdatingDecision] = useState(false);
 
   const fetchLeadData = async () => {
     if (!leadId) return;
@@ -53,23 +52,18 @@ export default function LeadDetail() {
       setLoading(true);
       setError(null);
       
-      const leadData = await getLeadById(leadId);
+      const data = await getLeadWithDetails(leadId);
       
-      if (!leadData) {
+      if (!data) {
         setError('Lead not found');
         return;
       }
       
-      setLead(leadData);
-      
-      if (leadData.project_id) {
-        const [packData, roomsData] = await Promise.all([
-          getLeadProjectPack(leadData.project_id),
-          getLeadProjectRooms(leadData.project_id),
-        ]);
-        setProjectPack(packData);
-        setRooms(roomsData);
-      }
+      setInvite(data.invite);
+      setProject(data.project);
+      setProjectPack(data.pack);
+      setRooms(data.rooms);
+      setLineItems(data.lineItems);
     } catch (err) {
       setError('Failed to load lead details. Please try again.');
       console.error('[Renomate] Error fetching lead:', err);
@@ -82,24 +76,47 @@ export default function LeadDetail() {
     fetchLeadData();
   }, [leadId]);
 
-  const handleSaveDraft = async () => {
-    if (!leadId) return;
+  const handleAccept = async () => {
+    if (!leadId || !invite) return;
     
     try {
-      setSaving(true);
-      await saveDraftQuoteNotes(leadId, quoteNotes);
+      setUpdatingDecision(true);
+      const updated = await updateInviteDecision(leadId, 'accepted');
+      setInvite(updated);
       toast({
-        title: 'Draft saved',
-        description: 'Your quote notes have been saved.',
+        title: 'Lead accepted',
+        description: 'You can now prepare and submit a quote for this project.',
       });
     } catch (err) {
       toast({
         title: 'Error',
-        description: 'Failed to save draft. Please try again.',
+        description: 'Failed to accept lead. Please try again.',
         variant: 'destructive',
       });
     } finally {
-      setSaving(false);
+      setUpdatingDecision(false);
+    }
+  };
+
+  const handleDecline = async () => {
+    if (!leadId || !invite) return;
+    
+    try {
+      setUpdatingDecision(true);
+      const updated = await updateInviteDecision(leadId, 'declined');
+      setInvite(updated);
+      toast({
+        title: 'Lead declined',
+        description: 'This lead has been moved to your declined list.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to decline lead. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingDecision(false);
     }
   };
 
@@ -111,7 +128,7 @@ export default function LeadDetail() {
     );
   }
 
-  if (error || !lead) {
+  if (error || !invite || !project) {
     return (
       <AppLayout>
         <ErrorState message={error || 'Lead not found'} onRetry={fetchLeadData} />
@@ -119,31 +136,25 @@ export default function LeadDetail() {
     );
   }
 
-  const project = lead.project;
-  const propertyTypeLabels = {
+  const propertyTypeLabels: Record<string, string> = {
     apartment: 'Apartment',
     villa: 'Villa',
     townhouse: 'Townhouse',
     penthouse: 'Penthouse',
-  };
-
-  const renovationDepthLabels = {
-    cosmetic: 'Cosmetic',
-    partial: 'Partial',
-    full: 'Full',
-    structural: 'Structural',
-  };
-
-  const roomTypeLabels = {
-    kitchen: 'Kitchen',
-    bathroom: 'Bathroom',
-    bedroom: 'Bedroom',
-    living_room: 'Living Room',
-    dining_room: 'Dining Room',
+    studio: 'Studio',
     office: 'Office',
-    balcony: 'Balcony',
-    other: 'Other',
   };
+
+  const renovationDepthLabels: Record<string, string> = {
+    light: 'Light',
+    medium: 'Medium',
+    full: 'Full',
+  };
+
+  const location = [project.location_area, project.location_city].filter(Boolean).join(', ');
+  const fitScoreLevel = getFitScoreLevel(invite.fit_score ?? undefined);
+  const isPending = invite.decision_status === 'pending';
+  const isAccepted = invite.decision_status === 'accepted';
 
   return (
     <AppLayout>
@@ -162,33 +173,63 @@ export default function LeadDetail() {
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-                {project?.name || 'Project Lead'}
+                {project.title}
               </h1>
               <div className="flex flex-wrap items-center gap-3">
-                <LeadStatusBadge status={lead.status} />
-                <FitScoreBadge score={lead.fit_score} value={lead.fit_score_value} />
-                {project && (
-                  <>
-                    <BudgetBandBadge band={project.budget_band} />
-                    <Badge variant="secondary">{propertyTypeLabels[project.property_type]}</Badge>
-                  </>
+                <DecisionStatusBadge status={invite.decision_status} />
+                {invite.fit_score && (
+                  <FitScoreBadge level={fitScoreLevel} value={Math.round(invite.fit_score)} />
+                )}
+                {project.property_type && (
+                  <Badge variant="secondary">
+                    {propertyTypeLabels[project.property_type] || project.property_type}
+                  </Badge>
                 )}
               </div>
             </div>
+
+            {/* Action buttons for pending leads */}
+            {isPending && (
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={handleDecline}
+                  disabled={updatingDecision}
+                  className="gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Decline
+                </Button>
+                <Button 
+                  onClick={handleAccept}
+                  disabled={updatingDecision}
+                  className="gap-2"
+                >
+                  <Check className="h-4 w-4" />
+                  Accept Lead
+                </Button>
+              </div>
+            )}
           </div>
 
-          {project && (
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            {location && (
               <span className="flex items-center gap-1.5">
                 <MapPin className="h-4 w-4" />
-                {project.location}
+                {location}
               </span>
+            )}
+            <span className="flex items-center gap-1.5">
+              <Calendar className="h-4 w-4" />
+              Invited {format(new Date(invite.created_at), 'MMM d, yyyy')}
+            </span>
+            {(project.estimated_budget_min || project.estimated_budget_max) && (
               <span className="flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" />
-                Invited {format(new Date(lead.invited_at), 'MMM d, yyyy')}
+                <Wallet className="h-4 w-4" />
+                {formatBudgetRange(project.estimated_budget_min, project.estimated_budget_max)}
               </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -203,29 +244,26 @@ export default function LeadDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  {project?.description || 'No description provided for this renovation project.'}
-                </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-3 rounded-lg bg-secondary text-center">
                     <p className="text-2xl font-bold text-foreground">{rooms.length}</p>
                     <p className="text-xs text-muted-foreground">Rooms</p>
                   </div>
                   <div className="p-3 rounded-lg bg-secondary text-center">
-                    <p className="text-2xl font-bold text-foreground">
-                      {projectPack?.timeline_summary.estimated_duration_weeks || '—'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Weeks</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-secondary text-center">
-                    <p className="text-2xl font-bold text-foreground capitalize">
-                      {project?.budget_band || '—'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Budget Tier</p>
+                    <p className="text-2xl font-bold text-foreground">{lineItems.length}</p>
+                    <p className="text-xs text-muted-foreground">Line Items</p>
                   </div>
                   <div className="p-3 rounded-lg bg-secondary text-center">
                     <p className="text-2xl font-bold text-foreground">
-                      {lead.fit_score_value}%
+                      {project.start_date_desired 
+                        ? format(new Date(project.start_date_desired), 'MMM')
+                        : '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Target Start</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-secondary text-center">
+                    <p className="text-2xl font-bold text-foreground">
+                      {invite.fit_score ? `${Math.round(invite.fit_score)}%` : '—'}
                     </p>
                     <p className="text-xs text-muted-foreground">Fit Score</p>
                   </div>
@@ -252,7 +290,7 @@ export default function LeadDetail() {
                     Room-Level Breakdown
                   </h4>
                   {rooms.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No rooms specified</p>
+                    <p className="text-sm text-muted-foreground">No rooms specified yet</p>
                   ) : (
                     <div className="grid gap-2">
                       {rooms.map((room) => (
@@ -262,15 +300,19 @@ export default function LeadDetail() {
                         >
                           <div className="flex items-center gap-3">
                             <span className="text-sm font-medium">{room.name}</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {roomTypeLabels[room.room_type]}
-                            </Badge>
+                            {room.room_type && (
+                              <Badge variant="secondary" className="text-xs">
+                                {room.room_type}
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             {room.area_sqm && <span>{room.area_sqm} sqm</span>}
-                            <Badge variant="outline" className="text-xs">
-                              {renovationDepthLabels[room.renovation_depth]}
-                            </Badge>
+                            {room.renovation_depth && (
+                              <Badge variant="outline" className="text-xs">
+                                {renovationDepthLabels[room.renovation_depth] || room.renovation_depth}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -278,26 +320,30 @@ export default function LeadDetail() {
                   )}
                 </div>
 
-                {/* Blind spots */}
-                {projectPack && projectPack.blind_spots.length > 0 && (
+                {/* Line items summary */}
+                {lineItems.length > 0 && (
                   <div>
                     <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-warning" />
-                      Constraints & Blind Spots
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      Line Items ({lineItems.length})
                     </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {projectPack.blind_spots.map((spot) => (
-                        <Badge 
-                          key={spot.id}
-                          variant={
-                            spot.severity === 'high' ? 'destructive' :
-                            spot.severity === 'medium' ? 'warning' : 'secondary'
-                          }
-                          className="gap-1"
+                    <div className="grid gap-2 max-h-[200px] overflow-y-auto">
+                      {lineItems.slice(0, 10).map((item) => (
+                        <div 
+                          key={item.id}
+                          className="flex items-center justify-between p-2 rounded bg-muted/30 text-sm"
                         >
-                          {getBlindSpotIcon(spot.category)} {spot.title}
-                        </Badge>
+                          <span className="truncate">{item.description}</span>
+                          <span className="text-muted-foreground whitespace-nowrap ml-2">
+                            {item.quantity} {item.unit}
+                          </span>
+                        </div>
                       ))}
+                      {lineItems.length > 10 && (
+                        <p className="text-xs text-muted-foreground text-center py-2">
+                          +{lineItems.length - 10} more items
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -315,69 +361,62 @@ export default function LeadDetail() {
                   </div>
                   <div className="p-3 rounded-lg border border-border">
                     <div className="flex items-center gap-2 mb-2">
-                      <Hammer className="h-4 w-4 text-accent" />
+                      <Hammer className="h-4 w-4 text-orange-500" />
                       <span className="text-sm font-medium">Contractor View</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      BOQ ready for pricing • MEP scope included
+                      {lineItems.length} line items for BOQ pricing
                     </p>
                   </div>
                   <div className="p-3 rounded-lg border border-border">
                     <div className="flex items-center gap-2 mb-2">
-                      <Truck className="h-4 w-4 text-info" />
+                      <Truck className="h-4 w-4 text-blue-500" />
                       <span className="text-sm font-medium">Material View</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Material schedule with {rooms.length * 5}+ line items
+                      Material schedule with quantities
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Quote workspace */}
-            <Card className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Send className="h-5 w-5 text-primary" />
-                  Quote / Proposal Workspace
-                </CardTitle>
-                <CardDescription>
-                  Draft your response to this lead
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea
-                  placeholder="Enter your draft quote notes, pricing considerations, or proposal outline here..."
-                  value={quoteNotes}
-                  onChange={(e) => setQuoteNotes(e.target.value)}
-                  className="min-h-[150px] resize-y"
-                />
-                
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button 
-                    variant="outline" 
-                    className="gap-2"
-                    onClick={handleSaveDraft}
-                    disabled={saving}
-                  >
-                    <Save className="h-4 w-4" />
-                    {saving ? 'Saving...' : 'Save Draft'}
-                  </Button>
-                  <Button variant="hero" className="gap-2">
-                    <Send className="h-4 w-4" />
-                    Start Draft Quote
-                  </Button>
-                </div>
+            {/* Quote workspace - only show if accepted */}
+            {isAccepted && (
+              <Card className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Send className="h-5 w-5 text-primary" />
+                    Quote / Proposal Workspace
+                  </CardTitle>
+                  <CardDescription>
+                    Draft your response to this lead
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Textarea
+                    placeholder="Enter your draft quote notes, pricing considerations, or proposal outline here..."
+                    value={quoteNotes}
+                    onChange={(e) => setQuoteNotes(e.target.value)}
+                    className="min-h-[150px] resize-y"
+                  />
+                  
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button variant="default" className="gap-2">
+                      <Send className="h-4 w-4" />
+                      Start Draft Quote
+                    </Button>
+                  </div>
 
-                {/* Placeholder for future quote builder */}
-                <div className="mt-6 p-6 rounded-lg border-2 border-dashed border-border bg-muted/30">
-                  <p className="text-sm text-muted-foreground text-center">
-                    Line-item quote builder coming soon. You'll be able to create detailed proposals with pricing breakdowns here.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                  {/* Placeholder for future quote builder */}
+                  <div className="mt-6 p-6 rounded-lg border-2 border-dashed border-border bg-muted/30">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Line-item quote builder coming soon. You'll be able to create detailed proposals with pricing breakdowns here.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar summary */}
@@ -390,11 +429,11 @@ export default function LeadDetail() {
                 {/* Budget */}
                 <div className="p-3 rounded-lg bg-secondary">
                   <div className="flex items-center gap-2 mb-1">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium text-secondary-foreground">Est. Budget</span>
                   </div>
-                  <p className="text-xl font-bold text-foreground">
-                    AED {project?.estimated_budget?.toLocaleString() || 'TBD'}
+                  <p className="text-lg font-bold text-foreground">
+                    {formatBudgetRange(project.estimated_budget_min, project.estimated_budget_max)}
                   </p>
                 </div>
 
@@ -402,16 +441,13 @@ export default function LeadDetail() {
                 <div className="p-3 rounded-lg bg-secondary">
                   <div className="flex items-center gap-2 mb-1">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-secondary-foreground">Target Timeline</span>
+                    <span className="text-sm font-medium text-secondary-foreground">Target Start</span>
                   </div>
-                  <p className="text-xl font-bold text-foreground">
-                    {projectPack?.timeline_summary.estimated_duration_weeks || '—'} weeks
+                  <p className="text-lg font-bold text-foreground">
+                    {project.start_date_desired 
+                      ? format(new Date(project.start_date_desired), 'MMM d, yyyy')
+                      : 'TBD'}
                   </p>
-                  {project?.target_end_date && (
-                    <p className="text-xs text-muted-foreground">
-                      Complete by {format(new Date(project.target_end_date), 'MMM d, yyyy')}
-                    </p>
-                  )}
                 </div>
 
                 {/* Rooms */}
@@ -420,13 +456,25 @@ export default function LeadDetail() {
                     <Home className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium text-secondary-foreground">Scope</span>
                   </div>
-                  <p className="text-xl font-bold text-foreground">
+                  <p className="text-lg font-bold text-foreground">
                     {rooms.length} rooms
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {rooms.filter(r => r.renovation_depth === 'full').length} full, {rooms.filter(r => r.renovation_depth !== 'full').length} partial
+                    {rooms.filter(r => r.renovation_depth === 'full').length} full renovation
                   </p>
                 </div>
+
+                {/* Pack status */}
+                {projectPack && (
+                  <div className="pt-3 border-t border-border">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Pack Status</span>
+                      <Badge variant={projectPack.status === 'published' ? 'default' : 'secondary'}>
+                        {projectPack.status}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
