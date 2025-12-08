@@ -8,9 +8,9 @@
 
 ## Pre-requisites
 
-- [ ] Dev server is running (`npm run dev` in `/app`)
-- [ ] Supabase project is accessible (check Supabase Dashboard)
-- [ ] `.env` file in `/app` has valid values for:
+- [x] Dev server is running (`npm run dev` in `/app`)
+- [x] Supabase project is accessible (check Supabase Dashboard)
+- [x] `.env` file in `/app` has valid values for:
   - `VITE_SUPABASE_URL` - Your Supabase project URL
   - `VITE_SUPABASE_ANON_KEY` - Your Supabase anon/public key
 
@@ -38,11 +38,12 @@ console.log('Connection test:', error ? 'FAILED' : 'OK', error || data);
 - If already logged in, should auto-redirect to dashboard
 
 ### Test Steps
-- [ ] Navigate to http://localhost:8080/
-- [ ] Verify hero section displays correctly
-- [ ] Verify "Sign In" button links to `/auth/login`
-- [ ] Verify "Create Account" button links to `/auth/signup`
-- [ ] Verify both feature cards link to `/auth/signup`
+- [x] Navigate to http://localhost:8080/
+- [x] Verify hero section displays correctly
+- [x] Verify "Sign In" button links to `/auth/login`
+- [x] Verify "Create Account" button links to `/auth/signup`
+- [x] Verify both feature cards link to `/auth/signup`
+- [ ] Verify auto-redirect when logged in (will test after sign up)
 
 ---
 
