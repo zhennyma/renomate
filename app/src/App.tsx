@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
+import ConfirmEmail from "./pages/auth/ConfirmEmail";
 import ProjectsList from "./pages/consumer/ProjectsList";
 import ProjectDetail from "./pages/consumer/ProjectDetail";
 import LeadsList from "./pages/supplier/LeadsList";
@@ -25,6 +26,7 @@ function AppRoutes() {
       <Route path="/" element={<Index />} />
       <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/signup" element={<Signup />} />
+      <Route path="/auth/confirm" element={<ConfirmEmail />} />
       
       {/* Consumer routes (protected) */}
       <Route 

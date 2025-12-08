@@ -30,9 +30,10 @@ interface AuthContextType {
   isAdmin: boolean;
   
   // Auth actions
-  signUp: (email: string, password: string, role: UserRole, fullName?: string) => Promise<{ error: string | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, role: UserRole, fullName?: string) => Promise<{ error: string | null; needsEmailConfirmation?: boolean }>;
+  signIn: (email: string, password: string) => Promise<{ error: string | null; needsEmailConfirmation?: boolean }>;
   signOut: () => Promise<void>;
+  resendConfirmationEmail: (email: string) => Promise<{ error: string | null }>;
   
   // Profile helpers
   getConsumerProfile: () => ConsumerProfile | null;
@@ -65,6 +66,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .single();
 
       if (error) {
+        // User record might not exist yet (during signup before trigger runs)
+        if (error.code === 'PGRST116') {
+          console.log('User record not found yet, may be pending trigger');
+          return null;
+        }
         console.error('Error fetching user data:', error);
         return null;
       }
@@ -127,20 +133,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [fetchUserData]);
 
   // Sign up with email/password
+  // User record is created automatically by database trigger
   const signUp = useCallback(async (
     email: string, 
     password: string, 
     role: UserRole,
     fullName?: string
-  ): Promise<{ error: string | null }> => {
+  ): Promise<{ error: string | null; needsEmailConfirmation?: boolean }> => {
     try {
       setError(null);
       setLoading(true);
 
-      // 1. Create Supabase auth user
+      // Create Supabase auth user with metadata
+      // The database trigger will automatically create the user record and profile
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            role,
+            full_name: fullName,
+          },
+        },
       });
 
       if (authError) {
@@ -154,50 +168,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { error: msg };
       }
 
-      // 2. Create user record in our users table
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .insert({
-          auth_provider_id: authData.user.id,
-          role,
-          email,
-          full_name: fullName,
-        })
-        .select()
-        .single();
-
-      if (userError) {
-        console.error('Error creating user record:', userError);
-        setError(userError.message);
-        return { error: userError.message };
-      }
-
-      // 3. Create role-specific profile
-      if (role === 'consumer') {
-        const { error: profileError } = await supabase
-          .from('consumer_profiles')
-          .insert({
-            user_id: userData.id,
-          });
-
-        if (profileError) {
-          console.error('Error creating consumer profile:', profileError);
-        }
-      } else if (role === 'supplier') {
-        const { error: profileError } = await supabase
-          .from('supplier_profiles')
-          .insert({
-            user_id: userData.id,
-            company_name: fullName || 'My Company', // Placeholder
-            trade_type: 'general', // Default
-          });
-
-        if (profileError) {
-          console.error('Error creating supplier profile:', profileError);
-        }
-      }
-
-      return { error: null };
+      // Check if email confirmation is required
+      // If session is null but user exists, email confirmation is pending
+      const needsEmailConfirmation = authData.user && !authData.session;
+      
+      return { error: null, needsEmailConfirmation };
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Sign up failed';
       setError(msg);
@@ -211,19 +186,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signIn = useCallback(async (
     email: string, 
     password: string
-  ): Promise<{ error: string | null }> => {
+  ): Promise<{ error: string | null; needsEmailConfirmation?: boolean }> => {
     try {
       setError(null);
       setLoading(true);
 
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (authError) {
+        // Check if error is due to unconfirmed email
+        const needsEmailConfirmation = authError.message.toLowerCase().includes('email not confirmed');
         setError(authError.message);
-        return { error: authError.message };
+        return { error: authError.message, needsEmailConfirmation };
       }
 
       return { error: null };
@@ -233,6 +210,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return { error: msg };
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  // Resend confirmation email
+  const resendConfirmationEmail = useCallback(async (
+    email: string
+  ): Promise<{ error: string | null }> => {
+    try {
+      setError(null);
+
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+
+      if (resendError) {
+        setError(resendError.message);
+        return { error: resendError.message };
+      }
+
+      return { error: null };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to resend confirmation email';
+      setError(msg);
+      return { error: msg };
     }
   }, []);
 
@@ -271,6 +273,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signUp,
     signIn,
     signOut,
+    resendConfirmationEmail,
     getConsumerProfile,
     getSupplierProfile,
   };

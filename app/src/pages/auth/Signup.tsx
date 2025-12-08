@@ -2,6 +2,7 @@
  * Signup Page
  * 
  * Handles user registration with role selection.
+ * Shows email confirmation instructions after successful signup.
  */
 
 import { useState } from 'react';
@@ -13,12 +14,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, Home, User, Briefcase } from 'lucide-react';
+import { Loader2, Home, User, Briefcase, Mail, CheckCircle2 } from 'lucide-react';
 import type { UserRole } from '@/lib/types';
 
 export default function Signup() {
   const navigate = useNavigate();
-  const { signUp, loading, isAuthenticated, user } = useAuth();
+  const { signUp, resendConfirmationEmail, loading, isAuthenticated, user } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +28,10 @@ export default function Signup() {
   const [role, setRole] = useState<UserRole>('consumer');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   // Redirect if already authenticated
   if (isAuthenticated && user) {
@@ -55,14 +59,13 @@ export default function Signup() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await signUp(email, password, role, fullName || undefined);
+      const result = await signUp(email, password, role, fullName || undefined);
       
-      if (error) {
-        setError(error);
+      if (result.error) {
+        setError(result.error);
       } else {
         setSuccess(true);
-        // Note: Supabase may require email confirmation
-        // For now, show success message
+        setNeedsEmailConfirmation(result.needsEmailConfirmation ?? false);
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -71,24 +74,108 @@ export default function Signup() {
     }
   };
 
+  const handleResendConfirmation = async () => {
+    setIsResending(true);
+    setResendSuccess(false);
+    
+    try {
+      const { error } = await resendConfirmationEmail(email);
+      if (error) {
+        setError(error);
+      } else {
+        setResendSuccess(true);
+        setError(null);
+      }
+    } catch (err) {
+      setError('Failed to resend confirmation email');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  // Success state - show email confirmation message
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <Link to="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
+              <Home className="h-4 w-4" />
+              Back to Home
+            </Link>
+            <h1 className="text-3xl font-bold text-gray-900">Renomate</h1>
+          </div>
+
           <Card>
-            <CardHeader>
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 p-3 rounded-full bg-green-100">
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
+              </div>
               <CardTitle className="text-green-600">Account Created!</CardTitle>
               <CardDescription>
                 Your account has been created successfully.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                Please check your email to confirm your account, then sign in.
-              </p>
-              <Button asChild className="w-full">
-                <Link to="/auth/login">Go to Sign In</Link>
-              </Button>
+            <CardContent className="space-y-4">
+              {needsEmailConfirmation ? (
+                <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                  <div className="flex items-start gap-3">
+                    <Mail className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">
+                        Please verify your email
+                      </p>
+                      <p className="text-sm text-blue-700 mt-1">
+                        We've sent a confirmation link to <strong>{email}</strong>. 
+                        Please check your inbox and click the link to activate your account.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-600 text-center">
+                  You can now sign in to your account.
+                </p>
+              )}
+
+              {resendSuccess && (
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    Confirmation email resent! Please check your inbox.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex flex-col gap-2">
+                <Button asChild className="w-full">
+                  <Link to="/auth/login">Go to Sign In</Link>
+                </Button>
+                
+                {needsEmailConfirmation && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleResendConfirmation}
+                    disabled={isResending}
+                  >
+                    {isResending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      "Didn't receive email? Resend"
+                    )}
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

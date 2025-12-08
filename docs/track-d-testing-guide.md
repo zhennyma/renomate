@@ -62,8 +62,8 @@ console.log('Connection test:', error ? 'FAILED' : 'OK', error || data);
 > **Note**: Use a real email address. Supabase rejects fake domains like `example.com`.
 > Tip: Use Gmail's + alias: `youremail+consumer@gmail.com` (goes to your inbox)
 
-- [ ] Navigate to http://localhost:8080/auth/signup
-- [ ] Select "Homeowner" role (should be selected by default)
+- [x] Navigate to http://localhost:8080/auth/signup
+- [x] Select "Homeowner" role (should be selected by default)
 - [ ] Enter test details:
   - Full Name: `Test Consumer`
   - Email: `<your-email>+consumer@gmail.com` (use your real email)
