@@ -53,6 +53,19 @@
 
 ---
 
+## Pending Validation
+
+| # | Track | What to Validate | Validation SQL | Status |
+|---|-------|------------------|----------------|--------|
+| 1 | Track D | `auth_provider_id` column exists in users table | `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'auth_provider_id';` | Pending |
+| 2 | Track D | User record is linked to auth user | `SELECT id, auth_provider_id, email, role FROM public.users;` | Pending |
+| 3 | Track D | RLS policies exist for all tables | `SELECT tablename, policyname FROM pg_policies WHERE schemaname = 'public';` | Pending |
+| 4 | Track D | RPC function `create_user_on_signup` exists | `SELECT routine_name FROM information_schema.routines WHERE routine_name = 'create_user_on_signup';` | Pending |
+| 5 | Track D | Test projects exist for consumer | `SELECT id, title FROM public.projects;` | Pending |
+| 6 | Track D | Supplier RLS policies work | Test supplier signup and leads access | Pending |
+
+---
+
 ## Decision Log
 
 | # | Date | Decision | Made By | Notes |
